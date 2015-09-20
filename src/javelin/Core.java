@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.1";
+	public static final String VERSION = "0.1.1";
 
 	public Core() throws Exception {
 		init();
@@ -96,8 +96,8 @@ public class Core {
 			return stringValue();
 		}
 
-		public symbol symbolValue() {
-			return (symbol) value;
+		public Symbol symbolValue() {
+			return (Symbol) value;
 		}
 	}
 
@@ -108,646 +108,16 @@ public class Core {
 	static final node node_1 = new node(1);
 	static final node node_nil = new node();
 
-	static class symbol {
-		public static HashMap<String, Integer> symcode = new HashMap<String, Integer>();
-		public static ArrayList<String> symname = new ArrayList<String>();
-		public int code;
-
-		public static int toCode(String name) {
-			Integer r = symcode.get(name);
-			if (r == null) {
-				r = symcode.size();
-				symcode.put(name, r);
-				symname.add(name);
-			}
-			return r;
-		}
-
-		public symbol(String name) {
-			code = toCode(name);
-		}
-
-		public String toString() {
-			return symname.get(code);
-		}
-	}
-
-	static class fn implements IFn { // anonymous function
-		ArrayList<node> def; // definition
-		environment outer_env;
-
-		fn(ArrayList<node> def, environment outer_env) {
-			this.def = def;
-			this.outer_env = outer_env;
-		}
-
-		public String toString() {
-			return "#<function:" + def.toString() + ">";
-		}
-
-		@Override
-		public node invoke(ArrayList<node> args, environment env) throws Exception {
-			// anonymous function application. lexical scoping
-			// ((ARGUMENT ...) BODY ...)
-			environment local_env = new environment(this.outer_env);
-			ArrayList<node> arg_syms = this.def.get(0).arrayListValue();
-
-			int len = arg_syms.size();
-			for (int i = 0; i < len; i++) { // assign arguments
-				symbol sym = arg_syms.get(i).symbolValue();
-				if (sym.toString().equals("&")) { // variadic arguments
-					sym = arg_syms.get(i + 1).symbolValue();
-					local_env.set(sym.code, new node(new ArrayList<node>(args.subList(i, args.size()))));
-					break;
-				}
-				node n2 = args.get(i);
-				local_env.set(sym.code, n2);
-			}
-
-			len = this.def.size();
-			node ret = null;
-			for (int i = 1; i < len; i++) { // body
-				ret = eval(this.def.get(i), local_env);
-			}
-			return ret;
-		}
-	}
-
-	static class environment {
-		HashMap<Integer, node> env = new HashMap<Integer, node>();
-		environment outer;
-
-		environment() {
-			this.outer = null;
-		}
-
-		environment(environment outer) {
-			this.outer = outer;
-		}
-
-		node get(int code) {
-			node found = env.get(code);
-			if (found != null) {
-				return found;
-			} else {
-				if (outer != null) {
-					return outer.get(code);
-				} else {
-					return null;
-				}
-			}
-		}
-
-		node set(int code, node v) {
-			node v2 = v.clone();
-			env.put(code, v2);
-			return v2;
-		}
-	}
-
-	private static class tokenizer {
-		private ArrayList<String> ret = new ArrayList<String>();
-		private String acc = ""; // accumulator
-		private String s;
-		public int unclosed = 0;
-
-		public tokenizer(String s) {
-			this.s = s;
-		}
-
-		private void emit() {
-			if (acc.length() > 0) {
-				ret.add(acc);
-				acc = "";
-			}
-		}
-
-		public ArrayList<String> tokenize() {
-			int last = s.length() - 1;
-			for (int pos = 0; pos <= last; pos++) {
-				char c = s.charAt(pos);
-				if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
-					emit();
-				} else if (c == ';') { // end-of-line comment
-					emit();
-					do
-						pos++;
-					while (pos <= last && s.charAt(pos) != '\n');
-				} else if (c == '\'') { // quote
-					acc += c;
-					emit();
-				} else if (c == '"') { // beginning of string
-					unclosed++;
-					emit();
-					acc += '"';
-					pos++;
-					while (pos <= last) {
-						if (s.charAt(pos) == '"') {
-							unclosed--;
-							break;
-						}
-						if (s.charAt(pos) == '\\') { // escape
-							char next = s.charAt(pos + 1);
-							if (next == 'r')
-								next = '\r';
-							else if (next == 'n')
-								next = '\n';
-							else if (next == 't')
-								next = '\t';
-							acc += next;
-							pos += 2;
-						} else {
-							acc += s.charAt(pos);
-							pos++;
-						}
-					}
-					emit();
-				} else if (c == '(') {
-					unclosed++;
-					emit();
-					acc += c;
-					emit();
-				} else if (c == ')') {
-					unclosed--;
-					emit();
-					acc += c;
-					emit();
-				} else {
-					acc += c;
-				}
-			}
-			emit();
-			return ret;
-		}
-	}
-
 	public static ArrayList<String> tokenize(String s) {
-		return new tokenizer(s).tokenize();
-	}
-
-	private static class parser {
-		private int pos = 0;
-		private ArrayList<String> tokens;
-
-		public parser(ArrayList<String> tokens) {
-			this.tokens = tokens;
-		}
-
-		public node parse() {
-			String tok = tokens.get(pos);
-			if (tok.charAt(0) == '"') { // double-quoted string
-				return new node(tok.substring(1));
-			} else if (tok.equals("'")) { // quote
-				pos++;
-				ArrayList<node> ret = new ArrayList<node>();
-				ret.add(new node(new symbol("quote")));
-				ret.add(parse());
-				return new node(ret);
-			} else if (tok.equals("(")) { // list
-				pos++;
-				return new node(parseList());
-			} else if (Character.isDigit(tok.charAt(0)) || tok.charAt(0) == '-' && tok.length() >= 2
-					&& Character.isDigit(tok.charAt(1))) { // number
-				if (tok.indexOf('.') != -1 || tok.indexOf('e') != -1) { // double
-					return new node(Double.parseDouble(tok));
-				} else if (tok.endsWith("L") || tok.endsWith("l")) { // long
-					return new node(Long.parseLong(tok.substring(0, tok.length() - 1)));
-				} else {
-					return new node(Integer.parseInt(tok));
-				}
-			} else { // symbol
-				return new node(new symbol(tok));
-			}
-		}
-
-		public ArrayList<node> parseList() {
-			ArrayList<node> ret = new ArrayList<node>();
-			int last = tokens.size() - 1;
-			for (; pos <= last; pos++) {
-				String tok = tokens.get(pos);
-				if (tok.equals(")")) { // end of list
-					break;
-				} else {
-					ret.add(parse());
-				}
-			}
-			return ret;
-		}
+		return new Tokenizer(s).tokenize();
 	}
 
 	static node parse(String s) {
-		return new parser(tokenize(s)).parse();
-	}
-
-	enum Special {
-		AND, OR, IF, WHILE, SET_E, QUOTE, FN, DO, _DOT, _DOTGET, _DOTSET_E, NEW, CAST, DEFMACRO, THREAD, DEF, BREAK, DOSEQ, LET
-	}
-
-	interface IFn {
-		public node invoke(ArrayList<node> args, environment env) throws Exception;
-	}
-
-	static class Builtin {
-		static class _plus implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				int len = args.size();
-				if (len <= 0)
-					return node_0;
-				node first = args.get(0);
-				if (first.value instanceof Integer) {
-					int acc = first.intValue();
-					for (int i = 1; i < len; i++) {
-						acc += args.get(i).intValue();
-					}
-					return new node(acc);
-				} else if (first.value instanceof Long) {
-					long acc = first.longValue();
-					for (int i = 1; i < len; i++) {
-						acc += args.get(i).longValue();
-					}
-					return new node(acc);
-				} else {
-					double acc = first.doubleValue();
-					for (int i = 1; i < len; i++) {
-						acc += args.get(i).doubleValue();
-					}
-					return new node(acc);
-				}
-			}
-		}
-
-		static class _minus implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				int len = args.size();
-				if (len <= 0)
-					return node_0;
-				node first = args.get(0);
-				if (first.value instanceof Integer) {
-					int acc = first.intValue();
-					if (len == 1) return new node(-acc);
-					for (int i = 1; i < len; i++) {
-						acc -= args.get(i).intValue();
-					}
-					return new node(acc);
-				} else if (first.value instanceof Long) {
-					long acc = first.longValue();
-					if (len == 1) return new node(-acc);
-					for (int i = 1; i < len; i++) {
-						acc -= args.get(i).longValue();
-					}
-					return new node(acc);
-				} else {
-					double acc = first.doubleValue();
-					if (len == 1) return new node(-acc);
-					for (int i = 1; i < len; i++) {
-						acc -= args.get(i).doubleValue();
-					}
-					return new node(acc);
-				}
-			}
-		}
-
-		static class _star implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				int len = args.size();
-				if (len <= 0)
-					return node_1;
-				node first = args.get(0);
-				if (first.value instanceof Integer) {
-					int acc = first.intValue();
-					for (int i = 1; i < len; i++) {
-						acc *= args.get(i).intValue();
-					}
-					return new node(acc);
-				} else if (first.value instanceof Long) {
-					long acc = first.longValue();
-					for (int i = 1; i < len; i++) {
-						acc *= args.get(i).longValue();
-					}
-					return new node(acc);
-				} else {
-					double acc = first.doubleValue();
-					for (int i = 1; i < len; i++) {
-						acc *= args.get(i).doubleValue();
-					}
-					return new node(acc);
-				}
-			}
-		}
-
-		static class _slash implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				int len = args.size();
-				if (len <= 0)
-					return node_1;
-				node first = args.get(0);
-				if (first.value instanceof Integer) {
-					int acc = first.intValue();
-					if (len == 1) return new node(1 / acc);
-					for (int i = 1; i < len; i++) {
-						acc /= args.get(i).intValue();
-					}
-					return new node(acc);
-				} else if (first.value instanceof Long) {
-					long acc = first.longValue();
-					if (len == 1) return new node(1 / acc);
-					for (int i = 1; i < len; i++) {
-						acc /= args.get(i).longValue();
-					}
-					return new node(acc);
-				} else {
-					double acc = first.doubleValue();
-					if (len == 1) return new node(1 / acc);
-					for (int i = 1; i < len; i++) {
-						acc /= args.get(i).doubleValue();
-					}
-					return new node(acc);
-				}
-			}
-		}
-
-		static class mod implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(args.get(0).intValue() % args.get(1).intValue());
-			}
-		}
-
-		static class _eq implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				Object v1 = args.get(0).value;
-				if (v1 == null) {
-					for (int i = 1; i < args.size(); i++) {
-						Object v2 = args.get(i).value;
-						if (v2 != null) return node_false;
-					}
-				}
-				else {
-					for (int i = 1; i < args.size(); i++) {
-						Object v2 = args.get(i).value;
-						if (!v1.equals(v2)) return node_false;
-					}
-				}
-				return node_true;
-			}
-		}
-
-		static class _eq_eq implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node first = args.get(0);
-				if (first.value instanceof Integer) {
-					int firstv = first.intValue();
-					for (int i = 1; i < args.size(); i++) {
-						if (args.get(i).intValue() != firstv) {
-							return node_false;
-						}
-					}
-				} else if (first.value instanceof Long) {
-					long firstv = first.longValue();
-					for (int i = 1; i < args.size(); i++) {
-						if (args.get(i).longValue() != firstv) {
-							return node_false;
-						}
-					}
-				} else {
-					double firstv = first.doubleValue();
-					for (int i = 1; i < args.size(); i++) {
-						if (args.get(i).doubleValue() != firstv) {
-							return node_false;
-						}
-					}
-				}
-				return node_true;
-			}
-		}
-
-		static class Not_eq implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				Object v1 = args.get(0).value;
-				if (v1 == null) {
-					for (int i = 1; i < args.size(); i++) {
-						Object v2 = args.get(i).value;
-						if (v2 != null) return node_true;
-					}
-				}
-				else {
-					for (int i = 1; i < args.size(); i++) {
-						Object v2 = args.get(i).value;
-						if (!v1.equals(v2)) return node_true;
-					}
-				}
-				return node_false;
-			}
-		}
-
-		static class _lt implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node first = args.get(0);
-				node second = args.get(1);
-				if (first.value instanceof Integer) {
-					return new node(first.intValue() < second.intValue());
-				} else if (first.value instanceof Long) {
-					return new node(first.longValue() < second.longValue());
-				} else {
-					return new node(first.doubleValue() < second.doubleValue());
-				}
-			}
-		}
-
-		static class _gt implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node first = args.get(0);
-				node second = args.get(1);
-				if (first.value instanceof Integer) {
-					return new node(first.intValue() > second.intValue());
-				} else if (first.value instanceof Long) {
-					return new node(first.longValue() > second.longValue());
-				} else {
-					return new node(first.doubleValue() > second.doubleValue());
-				}
-			}
-		}
-
-		static class _lt_eq implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node first = args.get(0);
-				node second = args.get(1);
-				if (first.value instanceof Integer) {
-					return new node(first.intValue() <= second.intValue());
-				} else if (first.value instanceof Long) {
-					return new node(first.longValue() <= second.longValue());
-				} else {
-					return new node(first.doubleValue() <= second.doubleValue());
-				}
-			}
-		}
-
-		static class _gt_eq implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node first = args.get(0);
-				node second = args.get(1);
-				if (first.value instanceof Integer) {
-					return new node(first.intValue() >= second.intValue());
-				} else if (first.value instanceof Long) {
-					return new node(first.longValue() >= second.longValue());
-				} else {
-					return new node(first.doubleValue() >= second.doubleValue());
-				}
-			}
-		}
-
-		static class not implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(!args.get(0).booleanValue());
-			}
-		}
-
-		static class read_string implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(parse(args.get(0).stringValue()).value);
-			}
-		}
-
-		static class type implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(args.get(0).type());
-			}
-		}
-
-		static class eval implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(eval(args.get(0), env));
-			}
-		}
-
-		static class fold implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node f = args.get(0);
-				ArrayList<node> lst = args.get(1).arrayListValue();
-				node acc = lst.get(0);
-				ArrayList<node> args2 = new ArrayList<node>(); // (ITEM1 ITEM2)
-				args2.add(null); // first argument
-				args2.add(null); // second argument
-				for (int i = 1; i < lst.size(); i++) {
-					args2.set(0, acc);
-					args2.set(1, lst.get(i));
-					acc = apply(f, args2, env);
-				}
-				return acc;
-			}
-		}
-
-		static class map implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node f = args.get(0);
-				ArrayList<node> lst = args.get(1).arrayListValue();
-				ArrayList<node> acc = new ArrayList<node>();
-				for (int i = 0; i < lst.size(); i++) {
-					ArrayList<node> args2 = new ArrayList<node>();
-					args2.add(lst.get(i));
-					acc.add(apply(f, args2, env));
-				}
-				return new node(acc);
-			}
-		}
-
-		static class apply implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return apply(args.get(0), args.get(1).arrayListValue(), env);
-			}
-		}
-
-		static class filter implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				node f = args.get(0);
-				ArrayList<node> lst = args.get(1).arrayListValue();
-				ArrayList<node> acc = new ArrayList<node>();
-				for (int i = 0; i < lst.size(); i++) {
-					ArrayList<node> args2 = new ArrayList<node>();
-					node item = lst.get(i);
-					args2.add(item);
-					node ret = apply(f, args2, env);
-					if (ret.booleanValue()) acc.add(item);
-				}
-				return new node(acc);
-			}
-		}
-
-		static class pr implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				for (int i = 0; i < args.size(); i++) {
-					if (i != 0) System.out.print(" ");
-					System.out.print(args.get(i));
-				}
-				return node_nil;
-			}
-		}
-
-		static class prn implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				for (int i = 0; i < args.size(); i++) {
-					if (i != 0) System.out.print(" ");
-					System.out.print(args.get(i));
-				}
-				System.out.println();
-				return node_nil;
-			}
-		}
-
-		static class read_line implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-				try {
-					return new node(br.readLine());
-				} catch (IOException e) {
-					return node_nil;
-				}
-			}
-		}
-
-		static class slurp implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				String filename = args.get(0).stringValue();
-				try {
-					return new node(slurp(filename));
-				} catch (IOException e) {
-					return node_nil;
-				}
-			}
-		}
-
-		static class spit implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				String filename = args.get(0).stringValue();
-				String str = args.get(1).stringValue();
-				return new node(spit(filename, str));
-			}
-		}
-
-		static class list implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(args);
-			}
-		}
-
-		static class str implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				StringBuilder sb = new StringBuilder();
-				for (Object x : args) {
-					sb.append(x.toString());
-				}
-				return new node(sb.toString());
-			}
-		}
-
-		static class symbol implements IFn {
-			public node invoke(ArrayList<node> args, environment env) throws Exception {
-				return new node(new Core.symbol(args.get(0).stringValue()));
-			}
-		}
+		return new Parser(tokenize(s)).parse();
 	}
 
 	@SuppressWarnings("unchecked")
-	static node apply(node func, ArrayList<node> args, environment env) throws Exception {
+	static node apply(node func, ArrayList<node> args, Environment env) throws Exception {
 		if (func.value instanceof IFn) {
 			return ((IFn) func.value).invoke(args, env);
 		} else {
@@ -762,7 +132,7 @@ public class Core {
 		}
 	}
 
-	environment global_env = new environment(); // variables. compile-time
+	Environment global_env = new Environment(); // variables. compile-time
 
 	void print_collection(Collection<String> coll) {
 		for (String key : new TreeSet<String>(coll)) {
@@ -776,7 +146,7 @@ public class Core {
 		System.out.println("Predefined Symbols:");
 		ArrayList<String> r = new ArrayList<String>(global_env.env.keySet().size());
 		for (int x : global_env.env.keySet()) {
-			r.add(symbol.symname.get(x));
+			r.add(Symbol.symname.get(x));
 		}
 		print_collection(r);
 		System.out.println("Macros:");
@@ -784,57 +154,57 @@ public class Core {
 	}
 
 	void init() throws Exception {
-		global_env.env.put(symbol.toCode("true"), node_true);
-		global_env.env.put(symbol.toCode("false"), node_false);
-		global_env.env.put(symbol.toCode("nil"), new node());
+		global_env.env.put(Symbol.toCode("true"), node_true);
+		global_env.env.put(Symbol.toCode("false"), node_false);
+		global_env.env.put(Symbol.toCode("nil"), new node());
 
-		global_env.env.put(symbol.toCode("+"), new node(new Builtin._plus()));
-		global_env.env.put(symbol.toCode("-"), new node(new Builtin._minus()));
-		global_env.env.put(symbol.toCode("*"), new node(new Builtin._star()));
-		global_env.env.put(symbol.toCode("/"), new node(new Builtin._slash()));
-		global_env.env.put(symbol.toCode("mod"), new node(new Builtin.mod()));
-		global_env.env.put(symbol.toCode("="), new node(new Builtin._eq()));
-		global_env.env.put(symbol.toCode("=="), new node(new Builtin._eq_eq()));
-		global_env.env.put(symbol.toCode("not="), new node(new Builtin.Not_eq()));
-		global_env.env.put(symbol.toCode("<"), new node(new Builtin._lt()));
-		global_env.env.put(symbol.toCode(">"), new node(new Builtin._gt()));
-		global_env.env.put(symbol.toCode("<="), new node(new Builtin._lt_eq()));
-		global_env.env.put(symbol.toCode(">="), new node(new Builtin._gt_eq()));
-		global_env.env.put(symbol.toCode("and"), new node(Special.AND));
-		global_env.env.put(symbol.toCode("or"), new node(Special.OR));
-		global_env.env.put(symbol.toCode("not"), new node(new Builtin.not()));
-		global_env.env.put(symbol.toCode("if"), new node(Special.IF));
-		global_env.env.put(symbol.toCode("while"), new node(Special.WHILE));
-		global_env.env.put(symbol.toCode("read-string"), new node(new Builtin.read_string()));
-		global_env.env.put(symbol.toCode("type"), new node(new Builtin.type()));
-		global_env.env.put(symbol.toCode("eval"), new node(new Builtin.eval()));
-		global_env.env.put(symbol.toCode("quote"), new node(Special.QUOTE));
-		global_env.env.put(symbol.toCode("fn"), new node(Special.FN));
-		global_env.env.put(symbol.toCode("list"), new node(new Builtin.list()));
-		global_env.env.put(symbol.toCode("apply"), new node(new Builtin.apply()));
-		global_env.env.put(symbol.toCode("fold"), new node(new Builtin.fold()));
-		global_env.env.put(symbol.toCode("map"), new node(new Builtin.map()));
-		global_env.env.put(symbol.toCode("filter"), new node(new Builtin.filter()));
-		global_env.env.put(symbol.toCode("do"), new node(Special.DO));
-		global_env.env.put(symbol.toCode("."), new node(Special._DOT));
-		global_env.env.put(symbol.toCode(".get"), new node(Special._DOTGET));
-		global_env.env.put(symbol.toCode(".set!"), new node(Special._DOTSET_E));
-		global_env.env.put(symbol.toCode("new"), new node(Special.NEW));
-		global_env.env.put(symbol.toCode("set!"), new node(Special.SET_E));
-		global_env.env.put(symbol.toCode("pr"), new node(new Builtin.pr()));
-		global_env.env.put(symbol.toCode("prn"), new node(new Builtin.prn()));
-		global_env.env.put(symbol.toCode("cast"), new node(Special.CAST));
-		global_env.env.put(symbol.toCode("defmacro"), new node(Special.DEFMACRO));
-		global_env.env.put(symbol.toCode("read-line"), new node(new Builtin.read_line()));
-		global_env.env.put(symbol.toCode("slurp"), new node(new Builtin.slurp()));
-		global_env.env.put(symbol.toCode("spit"), new node(new Builtin.spit()));
-		global_env.env.put(symbol.toCode("thread"), new node(Special.THREAD));
-		global_env.env.put(symbol.toCode("def"), new node(Special.DEF));
-		global_env.env.put(symbol.toCode("break"), new node(Special.BREAK));
-		global_env.env.put(symbol.toCode("doseq"), new node(Special.DOSEQ));
-		global_env.env.put(symbol.toCode("str"), new node(new Builtin.str()));
-		global_env.env.put(symbol.toCode("let"), new node(Special.LET));
-		global_env.env.put(symbol.toCode("symbol"), new node(new Builtin.symbol()));
+		global_env.env.put(Symbol.toCode("+"), new node(new Builtin._plus()));
+		global_env.env.put(Symbol.toCode("-"), new node(new Builtin._minus()));
+		global_env.env.put(Symbol.toCode("*"), new node(new Builtin._star()));
+		global_env.env.put(Symbol.toCode("/"), new node(new Builtin._slash()));
+		global_env.env.put(Symbol.toCode("mod"), new node(new Builtin.mod()));
+		global_env.env.put(Symbol.toCode("="), new node(new Builtin._eq()));
+		global_env.env.put(Symbol.toCode("=="), new node(new Builtin._eq_eq()));
+		global_env.env.put(Symbol.toCode("not="), new node(new Builtin.Not_eq()));
+		global_env.env.put(Symbol.toCode("<"), new node(new Builtin._lt()));
+		global_env.env.put(Symbol.toCode(">"), new node(new Builtin._gt()));
+		global_env.env.put(Symbol.toCode("<="), new node(new Builtin._lt_eq()));
+		global_env.env.put(Symbol.toCode(">="), new node(new Builtin._gt_eq()));
+		global_env.env.put(Symbol.toCode("and"), new node(Special.AND));
+		global_env.env.put(Symbol.toCode("or"), new node(Special.OR));
+		global_env.env.put(Symbol.toCode("not"), new node(new Builtin.not()));
+		global_env.env.put(Symbol.toCode("if"), new node(Special.IF));
+		global_env.env.put(Symbol.toCode("while"), new node(Special.WHILE));
+		global_env.env.put(Symbol.toCode("read-string"), new node(new Builtin.read_string()));
+		global_env.env.put(Symbol.toCode("type"), new node(new Builtin.type()));
+		global_env.env.put(Symbol.toCode("eval"), new node(new Builtin.eval()));
+		global_env.env.put(Symbol.toCode("quote"), new node(Special.QUOTE));
+		global_env.env.put(Symbol.toCode("fn"), new node(Special.FN));
+		global_env.env.put(Symbol.toCode("list"), new node(new Builtin.list()));
+		global_env.env.put(Symbol.toCode("apply"), new node(new Builtin.apply()));
+		global_env.env.put(Symbol.toCode("fold"), new node(new Builtin.fold()));
+		global_env.env.put(Symbol.toCode("map"), new node(new Builtin.map()));
+		global_env.env.put(Symbol.toCode("filter"), new node(new Builtin.filter()));
+		global_env.env.put(Symbol.toCode("do"), new node(Special.DO));
+		global_env.env.put(Symbol.toCode("."), new node(Special._DOT));
+		global_env.env.put(Symbol.toCode(".get"), new node(Special._DOTGET));
+		global_env.env.put(Symbol.toCode(".set!"), new node(Special._DOTSET_E));
+		global_env.env.put(Symbol.toCode("new"), new node(Special.NEW));
+		global_env.env.put(Symbol.toCode("set!"), new node(Special.SET_E));
+		global_env.env.put(Symbol.toCode("pr"), new node(new Builtin.pr()));
+		global_env.env.put(Symbol.toCode("prn"), new node(new Builtin.prn()));
+		global_env.env.put(Symbol.toCode("cast"), new node(Special.CAST));
+		global_env.env.put(Symbol.toCode("defmacro"), new node(Special.DEFMACRO));
+		global_env.env.put(Symbol.toCode("read-line"), new node(new Builtin.read_line()));
+		global_env.env.put(Symbol.toCode("slurp"), new node(new Builtin.slurp()));
+		global_env.env.put(Symbol.toCode("spit"), new node(new Builtin.spit()));
+		global_env.env.put(Symbol.toCode("thread"), new node(Special.THREAD));
+		global_env.env.put(Symbol.toCode("def"), new node(Special.DEF));
+		global_env.env.put(Symbol.toCode("break"), new node(Special.BREAK));
+		global_env.env.put(Symbol.toCode("doseq"), new node(Special.DOSEQ));
+		global_env.env.put(Symbol.toCode("str"), new node(new Builtin.str()));
+		global_env.env.put(Symbol.toCode("let"), new node(Special.LET));
+		global_env.env.put(Symbol.toCode("symbol"), new node(new Builtin.symbol()));
 
 		eval_string("(defmacro defn (name ...) (def name (fn ...)))" +
 				"(defmacro when (cond ...) (if cond (do ...)))" +
@@ -896,7 +266,7 @@ public class Core {
 			if (nArrayList.size() == 0)
 				return n;
 			node func = preprocess(nArrayList.get(0));
-			if (func.value instanceof symbol && func.toString().equals(("defmacro"))) {
+			if (func.value instanceof Symbol && func.toString().equals(("defmacro"))) {
 				// (defmacro add (a b) (+ a b)) ; define macro
 				macros.put(nArrayList.get(1).stringValue(), new node[] { nArrayList.get(2), nArrayList.get(3) });
 				return node_nil;
@@ -917,9 +287,9 @@ public class Core {
 		}
 	}
 
-	static node eval(node n, environment env) throws Exception {
-		if (n.value instanceof symbol) {
-			node r = env.get(((symbol) n.value).code);
+	static node eval(node n, Environment env) throws Exception {
+		if (n.value instanceof Symbol) {
+			node r = env.get(((Symbol) n.value).code);
 			if (r == null) {
 				throw new Exception("Unable to resolve symbol: " + n.toString());
 			}
@@ -957,7 +327,7 @@ public class Core {
 					int len = nArrayList.size();
 					for (int i = 1; i < len; i += 2) {
 						node value = eval(nArrayList.get(i + 1), env);
-						ret = env.set(((symbol) nArrayList.get(i).value).code, value);
+						ret = env.set(((Symbol) nArrayList.get(i).value).code, value);
 					}
 					return ret;
 				}
@@ -1014,7 +384,7 @@ public class Core {
 					for (int i = 1; i < nArrayList.size(); i++) {
 						r.add(nArrayList.get(i));
 					}
-					return new node(new fn(r, env));
+					return new node(new Fn(r, env));
 				}
 				case DO: { // (do X ...)
 					int last = nArrayList.size() - 1;
@@ -1035,8 +405,8 @@ public class Core {
 						// if (nArrayList.get(1).value instanceof symbol) { //
 						// class's static method e.g. (. java.lang.Math floor
 						// 1.5)
-						if (nArrayList.get(1).value instanceof symbol
-								&& env.get(((symbol) nArrayList.get(1).value).code) == null) {
+						if (nArrayList.get(1).value instanceof Symbol
+								&& env.get(((Symbol) nArrayList.get(1).value).code) == null) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
 							cls = Class.forName(className);
 						} else { // object's method e.g. (. "abc" length)
@@ -1083,8 +453,8 @@ public class Core {
 						Object obj = null;
 						String className = nArrayList.get(1).stringValue();
 						// class's static field e.g. (.get java.lang.Math PI)
-						if (nArrayList.get(1).value instanceof symbol
-								&& env.get(((symbol) nArrayList.get(1).value).code) == null) {																								// static
+						if (nArrayList.get(1).value instanceof Symbol
+								&& env.get(((Symbol) nArrayList.get(1).value).code) == null) {																								// static
 							cls = Class.forName(className);
 						} else { // object's method
 							obj = eval(nArrayList.get(1), env).value;
@@ -1107,8 +477,8 @@ public class Core {
 						String className = nArrayList.get(1).stringValue();
 						// if (nArrayList.get(1).value instanceof symbol) { //
 						// class's static field e.g. (.get java.lang.Math PI)
-						if (nArrayList.get(1).value instanceof symbol
-								&& env.get(((symbol) nArrayList.get(1).value).code) == null) { // class's static method
+						if (nArrayList.get(1).value instanceof Symbol
+								&& env.get(((Symbol) nArrayList.get(1).value).code) == null) { // class's static method
 							cls = Class.forName(className);
 						} else { // object's method
 							obj = eval(nArrayList.get(1), env).value;
@@ -1174,7 +544,7 @@ public class Core {
 				case THREAD: { // (thread EXPR ...): Creates new thread and
 								// starts it.
 					final ArrayList<node> exprs = new ArrayList<node>(nArrayList.subList(1, nArrayList.size()));
-					final environment env2 = new environment(env);
+					final Environment env2 = new Environment(env);
 					Thread t = new Thread() {
 						public void run() {
 							for (node n : exprs) {
@@ -1192,7 +562,7 @@ public class Core {
 				}
 				case DOSEQ: // (doseq (VAR SEQ) EXPR ...)
 				{
-					environment env2 = new environment(env);
+					Environment env2 = new Environment(env);
 					int varCode = nArrayList.get(1).arrayListValue().get(0).symbolValue().code;
 					@SuppressWarnings("rawtypes")
 					Iterable seq = (Iterable) eval(nArrayList.get(1).arrayListValue().get(1), env).value;
@@ -1207,7 +577,7 @@ public class Core {
 				}
 				case LET: // (let (VAR VALUE ...) BODY ...)
 				{
-					environment env2 = new environment(env);
+					Environment env2 = new Environment(env);
 					ArrayList<node> bindings = nArrayList.get(1).arrayListValue();
 					for (int i = 0; i < bindings.size(); i+= 2) {
 						env2.set(bindings.get(i).symbolValue().code, eval(bindings.get(i + 1), env2));
@@ -1292,7 +662,7 @@ public class Core {
 					break;
 				}
 				code += "\n" + line;
-				tokenizer t = new tokenizer(code);
+				Tokenizer t = new Tokenizer(code);
 				t.tokenize();
 				if (t.unclosed <= 0) { // no unmatched parenthesis nor quotation
 					eval_print(code);
@@ -1325,12 +695,12 @@ public class Core {
 
 	// for embedding
 	public Object get(String s) {
-		return global_env.get(symbol.toCode(s));
+		return global_env.get(Symbol.toCode(s));
 	}
 
 	// for embedding
 	public Object set(String s, Object o) {
-		return global_env.set(symbol.toCode(s), new node(o));
+		return global_env.set(Symbol.toCode(s), new node(o));
 	}
 
 	public static Object testField;
