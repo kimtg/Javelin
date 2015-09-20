@@ -37,7 +37,7 @@ Macros:
 ```
 
 ```
-(. javax.swing.JOptionPane showMessageDialog (cast java.awt.Component nil) (cast java.lang.Object "Hello, World!")) ; GUI Hello, World!
+(. javax.swing.JOptionPane showMessageDialog nil "Hello, World!") ; GUI Hello, World!
 ```
 
 ### Comment ###
@@ -161,7 +161,7 @@ abc : java.lang.String
 (defn read-url (address)
   (def url (new java.net.URL address))
   (def stream (. url openStream))
-  (def buf (new java.io.BufferedReader (cast java.io.Reader (new java.io.InputStreamReader (cast java.io.InputStream stream)))))
+  (def buf (new java.io.BufferedReader (new java.io.InputStreamReader stream)))
   (def r "")
   (while (not (nil? (def s (. buf readLine))))
     (set! r (str r s "\n")))
@@ -171,7 +171,7 @@ abc : java.lang.String
 (defn get-quote ()
   (def text (read-url "http://kosdb.koscom.co.kr/main/jisuticker.html"))
   (def p (. java.util.regex.Pattern compile "KOSPI200.*</font>"))
-  (def m (. p matcher (cast java.lang.CharSequence text)))
+  (def m (. p matcher text))
   (if (. m find) (. m group) ""))
 
 (while true

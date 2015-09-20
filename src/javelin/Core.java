@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.1.1";
+	public static final String VERSION = "0.2";
 
 	public Core() throws Exception {
 		init();
@@ -418,7 +418,7 @@ public class Core {
 						int last = nArrayList.size() - 1;
 						for (int i = 3; i <= last; i++) {
 							node a = eval(nArrayList.get(i), env);
-							Object param = a.value;
+							Object param = a.value;							
 							parameters.add(param);
 							Class<?> paramClass;
 							if (a.clazz == null) {
@@ -430,15 +430,28 @@ public class Core {
 									paramClass = Long.TYPE;
 								else if (param instanceof Boolean)
 									paramClass = Boolean.TYPE;
-								else
-									paramClass = param.getClass();
+								else {
+									if (param == null) paramClass = null;
+									else paramClass = param.getClass();
+								}
 							} else {
 								paramClass = a.clazz; // use hint
 							}
 							parameterTypes[i - 3] = paramClass;
 						}
 						String methodName = nArrayList.get(2).stringValue();
-						Method method = cls.getMethod(methodName, parameterTypes);
+						Method method = null;
+						try {
+							method = cls.getMethod(methodName, parameterTypes);
+						} catch (NoSuchMethodException e) {
+							for (Method m : cls.getMethods()) {
+								// find a method with the same number of parameters
+								if (m.getName().equals(methodName) && m.getParameterCount() == nArrayList.size() - 3) {
+									method = m;
+									break;
+								}
+							}
+						}
 						return new node(method.invoke(obj, parameters.toArray()));
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -517,14 +530,27 @@ public class Core {
 									paramClass = Long.TYPE;
 								else if (param instanceof Boolean)
 									paramClass = Boolean.TYPE;
-								else
-									paramClass = param.getClass();
+								else {
+									if (param == null) paramClass = null;
+									else paramClass = param.getClass();
+								}
 							} else {
 								paramClass = a.clazz; // use hint
 							}
 							parameterTypes[i - 2] = paramClass;
 						}
-						Constructor<?> ctor = cls.getConstructor(parameterTypes);
+						Constructor<?> ctor = null; 
+						try {
+							ctor = cls.getConstructor(parameterTypes);
+						} catch (NoSuchMethodException e) {
+							for (Constructor<?> c : cls.getConstructors()) {
+								// find a constructor with the same number of parameters
+								if (c.getParameterCount() == nArrayList.size() - 2) {
+									ctor = c;
+									break;
+								}
+							}
+						}
 						return new node(ctor.newInstance(parameters.toArray()));
 					} catch (Exception e) {
 						e.printStackTrace();
