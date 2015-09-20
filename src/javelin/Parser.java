@@ -2,8 +2,6 @@ package javelin;
 
 import java.util.ArrayList;
 
-import javelin.Core.node;
-
 class Parser {
 	private int pos = 0;
 	private ArrayList<String> tokens;
@@ -12,35 +10,35 @@ class Parser {
 		this.tokens = tokens;
 	}
 
-	public node parse() {
+	public Object parse() {
 		String tok = tokens.get(pos);
 		if (tok.charAt(0) == '"') { // double-quoted string
-			return new node(tok.substring(1));
+			return tok.substring(1);
 		} else if (tok.equals("'")) { // quote
 			pos++;
-			ArrayList<node> ret = new ArrayList<node>();
-			ret.add(new node(new Symbol("quote")));
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("quote"));
 			ret.add(parse());
-			return new node(ret);
+			return ret;
 		} else if (tok.equals("(")) { // list
 			pos++;
-			return new node(parseList());
+			return parseList();
 		} else if (Character.isDigit(tok.charAt(0)) || tok.charAt(0) == '-' && tok.length() >= 2
 				&& Character.isDigit(tok.charAt(1))) { // number
 			if (tok.indexOf('.') != -1 || tok.indexOf('e') != -1) { // double
-				return new node(Double.parseDouble(tok));
+				return Double.parseDouble(tok);
 			} else if (tok.endsWith("L") || tok.endsWith("l")) { // long
-				return new node(Long.parseLong(tok.substring(0, tok.length() - 1)));
+				return Long.parseLong(tok.substring(0, tok.length() - 1));
 			} else {
-				return new node(Integer.parseInt(tok));
+				return Integer.parseInt(tok);
 			}
 		} else { // symbol
-			return new node(new Symbol(tok));
+			return new Symbol(tok);
 		}
 	}
 
-	public ArrayList<node> parseList() {
-		ArrayList<node> ret = new ArrayList<node>();
+	public ArrayList<Object> parseList() {
+		ArrayList<Object> ret = new ArrayList<Object>();
 		int last = tokens.size() - 1;
 		for (; pos <= last; pos++) {
 			String tok = tokens.get(pos);

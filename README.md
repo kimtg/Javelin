@@ -25,7 +25,7 @@ OPTIONS:
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply break cast def defmacro do doseq eval false filter fn fold if let list map mod new nil nil? not not= or pr prn quote read-line read-string set! slurp spit str symbol thread true type while
+ * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if let list map mod new nil nil? not not= or pr prn quote read-line read-string set! slurp spit str symbol thread true type while
 Macros:
  defn when
 ```

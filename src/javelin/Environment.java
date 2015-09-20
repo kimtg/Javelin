@@ -2,10 +2,8 @@ package javelin;
 
 import java.util.HashMap;
 
-import javelin.Core.node;
-
 class Environment {
-	HashMap<Integer, node> env = new HashMap<Integer, node>();
+	HashMap<Integer, Object> env = new HashMap<Integer, Object>();
 	Environment outer;
 
 	Environment() {
@@ -16,22 +14,33 @@ class Environment {
 		this.outer = outer;
 	}
 
-	node get(int code) {
-		node found = env.get(code);
-		if (found != null) {
-			return found;
+	Object get(int code) throws Exception {				
+		if (env.containsKey(code)) {
+			return env.get(code);
 		} else {
 			if (outer != null) {
 				return outer.get(code);
 			} else {
-				return null;
+				throw new NoSuchVariableException("Unable to resolve symbol: " + Symbol.symname.get(code));
 			}
 		}
 	}
+	
+	Object set(int code, Object v) throws Exception {		
+		if (env.containsKey(code)) {
+			env.put(code, v);
+			return v;
+		} else {
+			if (outer != null) {
+				return outer.set(code, v);
+			} else {
+				throw new NoSuchVariableException("Unable to resolve symbol: " + Symbol.symname.get(code));
+			}
+		}
+	}	
 
-	node set(int code, node v) {
-		node v2 = v.clone();
-		env.put(code, v2);
-		return v2;
+	Object def(int code, Object v) {
+		env.put(code, v);
+		return v;
 	}
 }
