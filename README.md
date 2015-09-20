@@ -108,7 +108,7 @@ a : javelin.Core$symbol
 ### List ###
 ```
 > (. (list 2 4 6) get 1)
-4 : javelin.Core$node
+4 : java.lang.Integer
 > ((list 2 4 6) 1) ; implicit indexing
 4 : java.lang.Integer
 > (. (list 1 2 3) size)
