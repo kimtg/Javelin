@@ -82,7 +82,7 @@ false : java.lang.Boolean
 true : java.lang.Boolean
 > (apply + (list 1 2 3))
 6 : java.lang.Integer
-> (map (fn (x) (. java.lang.Math sqrt (. x doubleValue))) (list 1 2 3 4))
+> (map (fn (x) (. Math sqrt x)) (list 1 2 3 4))
 [1.0, 1.4142135623730951, 1.7320508075688772, 2.0] : java.util.ArrayList
 > (filter even? (list 1 2 3 4 5))
 [2, 4] : java.util.ArrayList
@@ -128,10 +128,12 @@ a : javelin.Core$symbol
 ```
 
 ### Java interoperability (from Javelin) ###
+java.lang. can be omitted.
+
 ```
-> (. java.lang.Math random) ; class's static method
+> (. Math random) ; class's static method.
 0.4780254852371699 : java.lang.Double
-> (. java.lang.Math floor 1.5)
+> (. Math floor 1.5)
 1.0 : java.lang.Double
 > (. "abc" length) ; object's method
 3 : java.lang.Integer
@@ -141,7 +143,7 @@ true : java.lang.String
 3 : java.lang.Integer
 > (. i doubleValue)
 3.0 : java.lang.Double
-> (.get java.lang.Math PI) ; get field
+> (.get Math PI) ; get field
 3.141592653589793 : java.lang.Double
 > (.get javelin.Core testField)(.get Core testField)
 nil : nil
@@ -177,7 +179,7 @@ abc : java.lang.String
 (while true
   (prn (new java.util.Date))
   (prn (get-quote))
-  (. java.lang.Thread sleep 2000L))
+  (. Thread sleep 2000L))
 ```
 
 ### Java interoperability (from Java) ###

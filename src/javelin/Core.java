@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.3";
+	public static final String VERSION = "0.3.1";
 
 	public Core() throws Exception {
 		init();
@@ -358,22 +358,25 @@ public class Core {
 				}
 				case _DOT: {
 					// Java interoperability
-					// (. CLASS METHOD ARGUMENT ...) ; Java method invocation
+					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
 					try {
+						// get class
 						Class<?> cls;
-						Object obj = null;
-						String className = nArrayList.get(1).toString();
-						// if (nArrayList.get(1).value instanceof symbol) { //
-						// class's static method e.g. (. java.lang.Math floor
-						// 1.5)
+						Object obj = null;						
 						try {
 							// object's method e.g. (. "abc" length)
 							obj = eval(nArrayList.get(1), env);
 							cls = obj.getClass();
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							cls = Class.forName(className);
+							String className = nArrayList.get(1).toString();
+							try {
+								cls = Class.forName(className);
+							} catch (ClassNotFoundException cnfe) {
+								cls = Class.forName("java.lang." + className);
+							}
 						}
+						
 						Class<?>[] parameterTypes = new Class<?>[nArrayList.size() - 3];
 						ArrayList<Object> parameters = new ArrayList<Object>();
 						int last = nArrayList.size() - 1;
@@ -417,19 +420,25 @@ public class Core {
 				}
 				case _DOTGET: {
 					// Java interoperability
-					// (.get CLASS FIELD) ; get Java field
+					// (.get CLASS-OR-OBJECT FIELD) ; get Java field
 					try {
+						// get class
 						Class<?> cls;
-						Object obj = null;
-						String className = nArrayList.get(1).toString();
+						Object obj = null;						
 						try {
 							// object's method e.g. (. "abc" length)
 							obj = eval(nArrayList.get(1), env);
 							cls = obj.getClass();
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							cls = Class.forName(className);
+							String className = nArrayList.get(1).toString();
+							try {
+								cls = Class.forName(className);
+							} catch (ClassNotFoundException cnfe) {
+								cls = Class.forName("java.lang." + className);
+							}
 						}
+						
 						String fieldName = nArrayList.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
 						return field.get(cls);
@@ -440,19 +449,25 @@ public class Core {
 				}
 				case _DOTSET_E: {
 					// Java interoperability
-					// (.set CLASS FIELD VALUE) ; set Java field
+					// (.set CLASS-OR-OBJECT FIELD VALUE) ; set Java field
 					try {
+						// get class
 						Class<?> cls;
-						Object obj = null;
-						String className = nArrayList.get(1).toString();
+						Object obj = null;						
 						try {
 							// object's method e.g. (. "abc" length)
 							obj = eval(nArrayList.get(1), env);
 							cls = obj.getClass();
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							cls = Class.forName(className);
+							String className = nArrayList.get(1).toString();
+							try {
+								cls = Class.forName(className);
+							} catch (ClassNotFoundException cnfe) {
+								cls = Class.forName("java.lang." + className);
+							}
 						}
+						
 						String fieldName = nArrayList.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
 						Object value = eval(nArrayList.get(3), env);
