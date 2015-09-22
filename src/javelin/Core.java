@@ -405,7 +405,7 @@ public class Core {
 						} catch (NoSuchMethodException e) {
 							for (Method m : cls.getMethods()) {
 								// find a method with the same number of parameters
-								if (m.getName().equals(methodName) && m.getParameterCount() == nArrayList.size() - 3) {
+								if (m.getName().equals(methodName) && m.getParameterTypes().length == nArrayList.size() - 3) {
 									method = m;
 									break;
 								}
@@ -503,7 +503,8 @@ public class Core {
 						} catch (NoSuchMethodException e) {
 							for (Constructor<?> c : cls.getConstructors()) {
 								// find a constructor with the same number of parameters
-								if (c.getParameterCount() == nArrayList.size() - 2) {
+								c.getParameterCount();
+								if (c.getParameterTypes().length == nArrayList.size() - 2) {
 									ctor = c;
 									break;
 								}

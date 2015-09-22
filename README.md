@@ -5,12 +5,10 @@
 Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal Lisp for the Java Virtual Machine).
 
 ## Compile ##
-```
-cd src
-javac -d bin src/javelin/*.java
-```
+Run `compile.bat`.
 
 ## Run ##
+Run `javelin.bat` or,
 ```
 Usage:
 java javelin.Core [OPTIONS...] [FILES...]
