@@ -25,7 +25,7 @@ OPTIONS:
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if let list map mod new nil nil? not not= or pr prn quote read-line read-string set! slurp spit str symbol thread true type while
+ * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if import let list map mod new nil nil? not not= or pr prn quote read-line read-string set! slurp spit str symbol thread true type while
 Macros:
  defn when
 ```
@@ -128,9 +128,13 @@ a : javelin.Core$symbol
 ```
 
 ### Java interoperability (from Javelin) ###
-java.lang. can be omitted.
-
 ```
+> (import) ; shows current import list. java.lang is imported by default. Classes are found in this order.
+[java.lang] : java.util.ArrayList
+> (import java.util)
+[java.lang, java.util] : java.util.ArrayList
+> (new Date)
+Tue Sep 22 14:33:28 KST 2015 : java.util.Date
 > (. Math random) ; class's static method.
 0.4780254852371699 : java.lang.Double
 > (. Math floor 1.5)
@@ -160,10 +164,12 @@ abc : java.lang.String
 #### KOSPI200 Ticker
 ```
 ; KOSPI200 Ticker (C) 2015 KIM Taegyoon
+(import java.net java.io java.util)
+
 (defn read-url (address)
-  (def url (new java.net.URL address))
+  (def url (new URL address))
   (def stream (. url openStream))
-  (def buf (new java.io.BufferedReader (new java.io.InputStreamReader stream)))
+  (def buf (new BufferedReader (new InputStreamReader stream)))
   (def r "")
   (while (not (nil? (def s (. buf readLine))))
     (set! r (str r s "\n")))
@@ -172,12 +178,12 @@ abc : java.lang.String
 
 (defn get-quote ()
   (def text (read-url "http://kosdb.koscom.co.kr/main/jisuticker.html"))
-  (def p (. java.util.regex.Pattern compile "KOSPI200.*</font>"))
+  (def p (. regex.Pattern compile "KOSPI200.*</font>"))
   (def m (. p matcher text))
   (if (. m find) (. m group) ""))
 
 (while true
-  (prn (new java.util.Date))
+  (prn (new Date))
   (prn (get-quote))
   (. Thread sleep 2000L))
 ```

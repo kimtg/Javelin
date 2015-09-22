@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.3.1";
+	public static final String VERSION = "0.3.2";
 
 	public Core() throws Exception {
 		init();
@@ -106,6 +106,7 @@ public class Core {
 	}
 
 	Environment global_env = new Environment(); // variables. compile-time
+	static ArrayList<String> imports = new ArrayList<String>();
 
 	void print_collection(Collection<String> coll) {
 		for (String key : new TreeSet<String>(coll)) {
@@ -177,10 +178,12 @@ public class Core {
 		set("str", new Builtin.str());
 		set("let", Special.LET);
 		set("symbol", new Builtin.symbol());
+		set("import", Special.IMPORT);
 
 		eval_string("(defmacro defn (name ...) (def name (fn ...)))" +
 				"(defmacro when (cond ...) (if cond (do ...)))" +
-				"(defn nil? (x) (= x nil))"
+				"(defn nil? (x) (= x nil))" +
+				"(import java.lang)"
 				);
 	}
 
@@ -370,11 +373,7 @@ public class Core {
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
 							String className = nArrayList.get(1).toString();
-							try {
-								cls = Class.forName(className);
-							} catch (ClassNotFoundException cnfe) {
-								cls = Class.forName("java.lang." + className);
-							}
+							cls = getClass(className);
 						}
 						
 						Class<?>[] parameterTypes = new Class<?>[nArrayList.size() - 3];
@@ -432,11 +431,7 @@ public class Core {
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
 							String className = nArrayList.get(1).toString();
-							try {
-								cls = Class.forName(className);
-							} catch (ClassNotFoundException cnfe) {
-								cls = Class.forName("java.lang." + className);
-							}
+							cls = getClass(className);
 						}
 						
 						String fieldName = nArrayList.get(2).toString();
@@ -461,11 +456,7 @@ public class Core {
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
 							String className = nArrayList.get(1).toString();
-							try {
-								cls = Class.forName(className);
-							} catch (ClassNotFoundException cnfe) {
-								cls = Class.forName("java.lang." + className);
-							}
+							cls = getClass(className);
 						}
 						
 						String fieldName = nArrayList.get(2).toString();
@@ -483,7 +474,7 @@ public class Core {
 					// (new CLASS ARG ...) ; create new Java object
 					try {
 						String className = nArrayList.get(1).toString();
-						Class<?> cls = Class.forName(className);
+						Class<?> cls = getClass(className);
 						Class<?>[] parameterTypes = new Class<?>[nArrayList.size() - 2];
 						ArrayList<Object> parameters = new ArrayList<Object>();
 						int last = nArrayList.size() - 1;
@@ -571,6 +562,13 @@ public class Core {
 					}
 					return ret;
 				}
+				case IMPORT: // (import CLASS-PREFIX ...)
+				{
+					for (int i = 1; i < nArrayList.size(); i++) {
+						imports.add(nArrayList.get(i).toString());
+					}
+					return imports;
+				}
 				default: {
 					System.err.println("Not implemented function: [" + func.toString() + "]");
 					return null;
@@ -588,6 +586,22 @@ public class Core {
 		} else {
 			// return n.clone();
 			return n;
+		}
+	}
+
+	private static Class<?> getClass(String className) throws ClassNotFoundException {
+		try {
+			return Class.forName(className);
+		} catch (ClassNotFoundException cnfe) {
+			for (String prefix : imports) {
+				try {
+					return Class.forName(prefix + "." + className);
+				} catch (ClassNotFoundException e) {
+					// try next import prefix
+					continue;
+				}
+			}
+			throw new ClassNotFoundException(className);
 		}
 	}
 
