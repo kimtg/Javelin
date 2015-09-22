@@ -103,7 +103,7 @@ a : javelin.Core$symbol
 ```
 
 ### Scope ###
-`let`, `fn`, `thread` make new scope.
+`doseq`, `fn`, `let`, `thread` make new scope.
 
 ### List ###
 ```
