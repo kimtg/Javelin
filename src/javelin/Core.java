@@ -565,7 +565,8 @@ public class Core {
 				case IMPORT: // (import CLASS-PREFIX ...)
 				{
 					for (int i = 1; i < nArrayList.size(); i++) {
-						imports.add(nArrayList.get(i).toString());
+						String s = nArrayList.get(i).toString();
+						if (!imports.contains(s)) imports.add(s);
 					}
 					return imports;
 				}
