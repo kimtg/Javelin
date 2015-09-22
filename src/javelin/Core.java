@@ -268,66 +268,66 @@ public class Core {
 			return r;
 		} else if (n instanceof ArrayList) { // function (FUNCTION
 													// ARGUMENT ...)
-			ArrayList<Object> nArrayList = Core.arrayListValue(n);
-			if (nArrayList.size() == 0)
+			ArrayList<Object> expr = Core.arrayListValue(n);
+			if (expr.size() == 0)
 				return null;
-			Object func = eval(nArrayList.get(0), env);
+			Object func = eval(expr.get(0), env);
 			Special foundBuiltin;
 			if (func instanceof Special) {
 				foundBuiltin = (Special) func;
 				switch (foundBuiltin) {
 				case SET_E: { // (set SYMBOL VALUE ...) ; set the PLACE's value
 					Object value = null;
-					int len = nArrayList.size();
+					int len = expr.size();
 					for (int i = 1; i < len; i += 2) {
-						value = eval(nArrayList.get(i + 1), env);
-						env.set(((Symbol)nArrayList.get(i)).code, value);
+						value = eval(expr.get(i + 1), env);
+						env.set(((Symbol)expr.get(i)).code, value);
 					}
 					return value;
 				}
 				case DEF: { // (def SYMBOL VALUE ...) ; set in the current
 							// environment
 					Object ret = null;
-					int len = nArrayList.size();
+					int len = expr.size();
 					for (int i = 1; i < len; i += 2) {
-						Object value = eval(nArrayList.get(i + 1), env);
-						ret = env.def(((Symbol) nArrayList.get(i)).code, value);
+						Object value = eval(expr.get(i + 1), env);
+						ret = env.def(((Symbol) expr.get(i)).code, value);
 					}
 					return ret;
 				}
 				case AND: { // (and X ...) short-circuit
-					for (int i = 1; i < nArrayList.size(); i++) {
-						if (!Core.booleanValue(eval(nArrayList.get(i), env))) {
+					for (int i = 1; i < expr.size(); i++) {
+						if (!Core.booleanValue(eval(expr.get(i), env))) {
 							return false;
 						}
 					}
 					return true;
 				}
 				case OR: { // (or X ...) short-circuit
-					for (int i = 1; i < nArrayList.size(); i++) {
-						if (Core.booleanValue(eval(nArrayList.get(i), env))) {
+					for (int i = 1; i < expr.size(); i++) {
+						if (Core.booleanValue(eval(expr.get(i), env))) {
 							return true;
 						}
 					}
 					return false;
 				}
 				case IF: { // (if CONDITION THEN_EXPR [ELSE_EXPR])
-					Object cond = nArrayList.get(1);
+					Object cond = expr.get(1);
 					if (Core.booleanValue(eval(cond, env))) {
-						return eval(nArrayList.get(2), env);
+						return eval(expr.get(2), env);
 					} else {
-						if (nArrayList.size() <= 3)
+						if (expr.size() <= 3)
 							return null;
-						return eval(nArrayList.get(3), env);
+						return eval(expr.get(3), env);
 					}
 				}
 				case WHILE: { // (while CONDITION EXPR ...)
 					try {
-						Object cond = nArrayList.get(1);
-						int len = nArrayList.size();
+						Object cond = expr.get(1);
+						int len = expr.size();
 						while (Core.booleanValue(eval(cond, env))) {
 							for (int i = 2; i < len; i++) {
-								eval(nArrayList.get(i), env);
+								eval(expr.get(i), env);
 							}
 						}
 					} catch (BreakException E) {
@@ -339,25 +339,25 @@ public class Core {
 					throw new BreakException();
 				}
 				case QUOTE: { // (quote X)
-					return nArrayList.get(1);
+					return expr.get(1);
 				}
 				case FN: {
 					// anonymous function. lexical scoping
 					// (fn (ARGUMENT ...) BODY ...)
 					ArrayList<Object> r = new ArrayList<Object>();
-					for (int i = 1; i < nArrayList.size(); i++) {
-						r.add(nArrayList.get(i));
+					for (int i = 1; i < expr.size(); i++) {
+						r.add(expr.get(i));
 					}
 					return new Fn(r, env);
 				}
 				case DO: { // (do X ...)
-					int last = nArrayList.size() - 1;
+					int last = expr.size() - 1;
 					if (last <= 0)
 						return null;
 					for (int i = 1; i < last; i++) {
-						eval(nArrayList.get(i), env);
+						eval(expr.get(i), env);
 					}
-					return eval(nArrayList.get(last), env);
+					return eval(expr.get(last), env);
 				}
 				case _DOT: {
 					// Java interoperability
@@ -368,19 +368,19 @@ public class Core {
 						Object obj = null;						
 						try {
 							// object's method e.g. (. "abc" length)
-							obj = eval(nArrayList.get(1), env);
+							obj = eval(expr.get(1), env);
 							cls = obj.getClass();
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							String className = nArrayList.get(1).toString();
+							String className = expr.get(1).toString();
 							cls = getClass(className);
 						}
 						
-						Class<?>[] parameterTypes = new Class<?>[nArrayList.size() - 3];
+						Class<?>[] parameterTypes = new Class<?>[expr.size() - 3];
 						ArrayList<Object> parameters = new ArrayList<Object>();
-						int last = nArrayList.size() - 1;
+						int last = expr.size() - 1;
 						for (int i = 3; i <= last; i++) {
-							Object a = eval(nArrayList.get(i), env);
+							Object a = eval(expr.get(i), env);
 							Object param = a;							
 							parameters.add(param);
 							Class<?> paramClass;
@@ -398,14 +398,14 @@ public class Core {
 							}
 							parameterTypes[i - 3] = paramClass;
 						}
-						String methodName = nArrayList.get(2).toString();
+						String methodName = expr.get(2).toString();
 						Method method = null;
 						try {
 							method = cls.getMethod(methodName, parameterTypes);
 						} catch (NoSuchMethodException e) {
 							for (Method m : cls.getMethods()) {
 								// find a method with the same number of parameters
-								if (m.getName().equals(methodName) && m.getParameterTypes().length == nArrayList.size() - 3) {
+								if (m.getName().equals(methodName) && m.getParameterTypes().length == expr.size() - 3) {
 									method = m;
 									break;
 								}
@@ -426,15 +426,15 @@ public class Core {
 						Object obj = null;						
 						try {
 							// object's method e.g. (. "abc" length)
-							obj = eval(nArrayList.get(1), env);
+							obj = eval(expr.get(1), env);
 							cls = obj.getClass();
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							String className = nArrayList.get(1).toString();
+							String className = expr.get(1).toString();
 							cls = getClass(className);
 						}
 						
-						String fieldName = nArrayList.get(2).toString();
+						String fieldName = expr.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
 						return field.get(cls);
 					} catch (Exception e) {
@@ -451,17 +451,17 @@ public class Core {
 						Object obj = null;						
 						try {
 							// object's method e.g. (. "abc" length)
-							obj = eval(nArrayList.get(1), env);
+							obj = eval(expr.get(1), env);
 							cls = obj.getClass();
 						} catch (NoSuchVariableException e) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							String className = nArrayList.get(1).toString();
+							String className = expr.get(1).toString();
 							cls = getClass(className);
 						}
 						
-						String fieldName = nArrayList.get(2).toString();
+						String fieldName = expr.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
-						Object value = eval(nArrayList.get(3), env);
+						Object value = eval(expr.get(3), env);
 						field.set(cls, value);
 						return null;
 					} catch (Exception e) {
@@ -473,13 +473,13 @@ public class Core {
 					// Java interoperability
 					// (new CLASS ARG ...) ; create new Java object
 					try {
-						String className = nArrayList.get(1).toString();
+						String className = expr.get(1).toString();
 						Class<?> cls = getClass(className);
-						Class<?>[] parameterTypes = new Class<?>[nArrayList.size() - 2];
+						Class<?>[] parameterTypes = new Class<?>[expr.size() - 2];
 						ArrayList<Object> parameters = new ArrayList<Object>();
-						int last = nArrayList.size() - 1;
+						int last = expr.size() - 1;
 						for (int i = 2; i <= last; i++) {
-							Object a = eval(nArrayList.get(i), env);
+							Object a = eval(expr.get(i), env);
 							Object param = a;
 							parameters.add(param);
 							Class<?> paramClass;
@@ -503,8 +503,7 @@ public class Core {
 						} catch (NoSuchMethodException e) {
 							for (Constructor<?> c : cls.getConstructors()) {
 								// find a constructor with the same number of parameters
-								c.getParameterCount();
-								if (c.getParameterTypes().length == nArrayList.size() - 2) {
+								if (c.getParameterTypes().length == expr.size() - 2) {
 									ctor = c;
 									break;
 								}
@@ -518,7 +517,7 @@ public class Core {
 				}
 				case THREAD: { // (thread EXPR ...): Creates new thread and
 								// starts it.
-					final ArrayList<Object> exprs = new ArrayList<Object>(nArrayList.subList(1, nArrayList.size()));
+					final ArrayList<Object> exprs = new ArrayList<Object>(expr.subList(1, expr.size()));
 					final Environment env2 = new Environment(env);
 					Thread t = new Thread() {
 						public void run() {
@@ -538,14 +537,14 @@ public class Core {
 				case DOSEQ: // (doseq (VAR SEQ) EXPR ...)
 				{
 					Environment env2 = new Environment(env);
-					int varCode = Core.symbolValue(Core.arrayListValue(nArrayList.get(1)).get(0)).code;
+					int varCode = Core.symbolValue(Core.arrayListValue(expr.get(1)).get(0)).code;
 					@SuppressWarnings("rawtypes")
-					Iterable seq = (Iterable) eval(Core.arrayListValue(nArrayList.get(1)).get(1), env);
-					int len = nArrayList.size();
+					Iterable seq = (Iterable) eval(Core.arrayListValue(expr.get(1)).get(1), env);
+					int len = expr.size();
 					for (Object x : seq) {
 						env2.def(varCode, (Object) x);
 						for (int i = 2; i < len; i++) {
-							eval(nArrayList.get(i), env2);
+							eval(expr.get(i), env2);
 						}
 					}
 					return null;
@@ -553,20 +552,20 @@ public class Core {
 				case LET: // (let (VAR VALUE ...) BODY ...)
 				{
 					Environment env2 = new Environment(env);
-					ArrayList<Object> bindings = Core.arrayListValue(nArrayList.get(1));
+					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
 					for (int i = 0; i < bindings.size(); i+= 2) {
 						env2.def(Core.symbolValue(bindings.get(i)).code, eval(bindings.get(i + 1), env2));
 					}
 					Object ret = null;
-					for (int i = 2; i < nArrayList.size(); i++) {
-						ret = eval(nArrayList.get(i), env2);
+					for (int i = 2; i < expr.size(); i++) {
+						ret = eval(expr.get(i), env2);
 					}
 					return ret;
 				}
 				case IMPORT: // (import CLASS-PREFIX ...)
 				{
-					for (int i = 1; i < nArrayList.size(); i++) {
-						String s = nArrayList.get(i).toString();
+					for (int i = 1; i < expr.size(); i++) {
+						String s = expr.get(i).toString();
 						if (!imports.contains(s)) imports.add(s);
 					}
 					return imports;
@@ -579,9 +578,9 @@ public class Core {
 			} else {
 				// evaluate arguments
 				ArrayList<Object> args = new ArrayList<Object>();
-				int len = nArrayList.size();
+				int len = expr.size();
 				for (int i = 1; i < len; i++) {
-					args.add(eval(nArrayList.get(i), env));
+					args.add(eval(expr.get(i), env));
 				}
 				return apply(func, args, env);
 			}
