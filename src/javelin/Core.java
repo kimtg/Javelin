@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.3.2";
+	public static final String VERSION = "0.3.3";
 
 	public Core() throws Exception {
 		init();
@@ -271,12 +271,10 @@ public class Core {
 			ArrayList<Object> expr = Core.arrayListValue(n);
 			if (expr.size() == 0)
 				return null;
-			Object func = eval(expr.get(0), env);
-			Special foundBuiltin;
-			if (func instanceof Special) {
-				foundBuiltin = (Special) func;
-				switch (foundBuiltin) {
-				case SET_E: { // (set SYMBOL VALUE ...) ; set the PLACE's value
+			Object func = eval(expr.get(0), env);			
+			if (func instanceof Special) {				
+				switch ((Special) func) {
+				case SET_E: { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
 					Object value = null;
 					int len = expr.size();
 					for (int i = 1; i < len; i += 2) {
@@ -444,7 +442,7 @@ public class Core {
 				}
 				case _DOTSET_E: {
 					// Java interoperability
-					// (.set CLASS-OR-OBJECT FIELD VALUE) ; set Java field
+					// (.set! CLASS-OR-OBJECT FIELD VALUE) ; set Java field
 					try {
 						// get class
 						Class<?> cls;

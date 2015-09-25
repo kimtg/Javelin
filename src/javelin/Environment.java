@@ -14,7 +14,7 @@ class Environment {
 		this.outer = outer;
 	}
 
-	Object get(int code) throws Exception {				
+	Object get(int code) throws NoSuchVariableException  {				
 		if (env.containsKey(code)) {
 			return env.get(code);
 		} else {
