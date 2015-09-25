@@ -1,0 +1,122 @@
+; DrJavelin
+; (C) 2015 Kim, Taegyoon
+
+(import javax.swing java.awt java.awt.event java.io java.util)
+
+(def title "DrJavelin")
+
+(def aCurFileName "")
+
+(. javax.swing.UIManager setLookAndFeel
+	(. javax.swing.UIManager getSystemLookAndFeelClassName)) ; make look native
+
+(def frame (new JFrame))
+(defn updateFileName (fileName)
+	(set! aCurFileName fileName)
+	(. frame setTitle (str aCurFileName " - " title)))
+
+(updateFileName "")
+
+(def text (new TextArea 20 80))
+(def textf (new TextField))
+(def button (new Button "Eval"))
+
+(defn eval-string (code)
+	(eval (read-string (str "(do " code "\n)"))))
+
+(defn eval-code (code)
+	(str (eval-string code)))
+
+(. button addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(eval-code (. text getText)))))
+
+(defn eval-print (code)
+	(prn (str "> " code "\n" (eval-code code))))
+
+(. textf addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(eval-print (. textf getText))
+		(. textf setText nil))))
+
+(def fc (new javax.swing.JFileChooser))
+; (. fc setFileFilter (new javax.swing.filechooser.FileNameExtensionFilter "Javelin file (*.jvl)" "jvl"))
+
+(def panel (new JPanel))
+
+(defn char->int (s) (. Character getNumericValue (. s charAt 0)))
+
+(def menuBar (new JMenuBar))
+(def menuFile (new JMenu "File"))
+(. menuFile setMnemonic (char->int "f"))
+(def menuNew (new JMenuItem "New" (char->int "n")))
+(def menuOpen (new JMenuItem "Open..." (char->int "o")))
+(def menuSave (new JMenuItem "Save" (char->int "s")))
+(def menuSaveAs (new JMenuItem "Save As..." (char->int "a")))
+(. menuNew setAccelerator (. KeyStroke getKeyStroke "control N"))
+(. menuOpen setAccelerator (. KeyStroke getKeyStroke "control O"))
+(. menuSave setAccelerator (. KeyStroke getKeyStroke "control S"))
+(. menuSaveAs setAccelerator (. KeyStroke getKeyStroke "control alt S"))
+(def menuExit (new JMenuItem "Exit" (char->int "x")))
+(. menuBar add menuFile)
+(. menuFile add menuNew)
+(. menuFile add menuOpen)
+(. menuFile add menuSave)
+(. menuFile add menuSaveAs)
+(. menuFile addSeparator)
+(. menuFile add menuExit)
+(. frame setJMenuBar menuBar)
+
+(. menuNew addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(updateFileName "")
+		(. text setText ""))))
+
+(. menuOpen addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(when (= (. fc showOpenDialog nil) (.get javax.swing.JFileChooser APPROVE_OPTION))
+		  (let (fileName (. (. fc getSelectedFile) getCanonicalPath))
+				  (updateFileName fileName)
+				  (. text setText (slurp fileName)))))))
+
+(defn fileSave (fileName)
+	(spit fileName (. text getText)))
+
+(defn fileSaveAs ()
+	(when (= (. fc showSaveDialog nil) (.get javax.swing.JFileChooser APPROVE_OPTION))
+	  (let (fileName (. (. fc getSelectedFile) getCanonicalPath))
+		(updateFileName fileName)
+		(fileSave fileName))))
+
+(. menuSave addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(if (= aCurFileName "")
+		  (fileSaveAs)
+		  (fileSave aCurFileName)))))
+
+(. menuSaveAs addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(fileSaveAs))))
+
+(. menuExit addActionListener
+	(proxy ActionListener
+	  (actionPerformed (e)
+		(. System exit 0))))
+
+(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
+(let (font (new Font "Monospaced" (.get Font PLAIN) 12))
+	(. text setFont font)
+	(. textf setFont font))
+(. panel setLayout (new BoxLayout panel (.get BoxLayout PAGE_AXIS)))
+(. frame add button (.get BorderLayout NORTH))
+(. frame add text)
+(. panel add textf)
+(. frame add panel (.get BorderLayout SOUTH))
+(. frame pack)
+(. frame setVisible true)

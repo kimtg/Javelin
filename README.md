@@ -20,10 +20,12 @@ OPTIONS:
     -v    print version.
 ```
 
+Run `DrJavelin.bat` to run a simple GUI REPL.
+
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if import let list map mod new nil nil? not not= or pr prn quote read-line read-string set! slurp spit str symbol thread true type while
+ * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if import let list map mod new nil nil? not not= or pr prn proxy quote read-line read-string set! slurp spit str symbol thread true type while
 Macros:
  defn when
 ```
@@ -157,6 +159,22 @@ nil : nil
 abc : java.lang.String
 > (. (new java.math.BigInteger "2") pow 100) ; 2 ^ 100
 1267650600228229401496703205376 : java.math.BigInteger
+```
+
+#### Proxy example
+```
+(import javax.swing java.awt java.awt.event)
+
+(def frame (new JFrame))
+(def button (new Button "Hello"))
+(. button addActionListener
+	(proxy java.awt.event.ActionListener
+	  (actionPerformed (e)
+		(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World! " e)))))
+(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
+(. frame add button (.get BorderLayout NORTH))
+(. frame pack)
+(. frame setVisible true)
 ```
 
 #### KOSPI200 Ticker

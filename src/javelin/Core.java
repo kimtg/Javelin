@@ -6,15 +6,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.3.3";
+	public static final String VERSION = "0.4";
 
 	public Core() throws Exception {
 		init();
@@ -98,7 +101,7 @@ public class Core {
 				// implicit indexing
 				return ((List<Object>) func).get(Core.intValue(args.get(0)));
 			}
-			else {
+			else {				
 				System.err.println("Unknown function: [" + func.toString() + "]");
 				return null;
 			}
@@ -179,10 +182,11 @@ public class Core {
 		set("let", Special.LET);
 		set("symbol", new Builtin.symbol());
 		set("import", Special.IMPORT);
+		set("proxy", Special.PROXY);
 
 		eval_string("(defmacro defn (name ...) (def name (fn ...)))" +
 				"(defmacro when (cond ...) (if cond (do ...)))" +
-				"(defn nil? (x) (= x nil))" +
+				"(defn nil? (x) (= nil x))" +
 				"(import java.lang)"
 				);
 	}
@@ -397,19 +401,23 @@ public class Core {
 							parameterTypes[i - 3] = paramClass;
 						}
 						String methodName = expr.get(2).toString();
-						Method method = null;
 						try {
-							method = cls.getMethod(methodName, parameterTypes);
+							Method m = cls.getMethod(methodName, parameterTypes);
+							return m.invoke(obj, parameters.toArray());
 						} catch (NoSuchMethodException e) {
 							for (Method m : cls.getMethods()) {
 								// find a method with the same number of parameters
 								if (m.getName().equals(methodName) && m.getParameterTypes().length == expr.size() - 3) {
-									method = m;
-									break;
+									try {
+										return m.invoke(obj, parameters.toArray());
+									} catch (IllegalArgumentException iae) {
+										// try next method
+										continue;
+									}	
 								}
 							}
-						}
-						return method.invoke(obj, parameters.toArray());
+						}						
+						throw new IllegalArgumentException(expr.toString());
 					} catch (Exception e) {
 						e.printStackTrace();
 						return null;
@@ -495,19 +503,24 @@ public class Core {
 							}
 							parameterTypes[i - 2] = paramClass;
 						}
-						Constructor<?> ctor = null; 
+						 
 						try {
-							ctor = cls.getConstructor(parameterTypes);
+							Constructor<?> c = cls.getConstructor(parameterTypes);
+							return c.newInstance(parameters.toArray());
 						} catch (NoSuchMethodException e) {
 							for (Constructor<?> c : cls.getConstructors()) {
 								// find a constructor with the same number of parameters
 								if (c.getParameterTypes().length == expr.size() - 2) {
-									ctor = c;
-									break;
+									try {
+										return c.newInstance(parameters.toArray());
+									} catch (IllegalArgumentException iae) {
+										// try next constructor
+										continue;
+									}
 								}
 							}
 						}
-						return ctor.newInstance(parameters.toArray());
+						throw new IllegalArgumentException(expr.toString());
 					} catch (Exception e) {
 						e.printStackTrace();
 						return null;
@@ -567,6 +580,47 @@ public class Core {
 						if (!imports.contains(s)) imports.add(s);
 					}
 					return imports;
+				}
+				case PROXY: // (proxy INTERFACE (METHOD (ARGS ...) BODY ...) ...)
+				{
+// example:
+//					(import javax.swing java.awt java.awt.event)
+//
+//					(def frame (new JFrame))
+//					(def button (new Button "Hello"))
+//					(. button addActionListener
+//						(proxy ActionListener
+//						  (actionPerformed (e)
+//							(. javax.swing.JOptionPane showMessageDialog nil "Hello, World!"))))
+//					(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
+//					(. frame add button (.get BorderLayout NORTH))
+//					(. frame setVisible true)
+
+					Class<?> cls = getClass(expr.get(1).toString());
+					ClassLoader cl = cls.getClassLoader();
+					HashMap<String, Fn> methods = new HashMap<String, Fn>();
+					for (int i = 2; i < expr.size(); i++) {
+						@SuppressWarnings("unchecked")
+						ArrayList<Object> methodDef = (ArrayList<Object>) expr.get(i);
+						methods.put(methodDef.get(0).toString(), new Fn(new ArrayList<Object>(methodDef.subList(1, methodDef.size())), env));
+					}
+					class MyHandler implements InvocationHandler {
+						HashMap<String, Fn> methods;
+						Environment env;
+						
+						public MyHandler(HashMap<String, Fn> methods, Environment env) {
+							this.methods = methods;
+							this.env = env;
+						}
+						
+						@Override
+						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+							return apply(methods.get(method.getName()), new ArrayList<Object>(Arrays.asList(args)), env);							
+						}
+					}
+					InvocationHandler handler = new MyHandler(methods, env);
+					Object ret = Proxy.newProxyInstance(cl, new Class[] {cls}, handler);
+					return ret;
 				}
 				default: {
 					System.err.println("Not implemented function: [" + func.toString() + "]");
