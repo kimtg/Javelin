@@ -138,7 +138,7 @@ Exception in thread "main" java.lang.StackOverflowError
 ```
 
 ### Scope ###
-`doseq`, `fn`, `let`, `thread` make new scope.
+`doseq`, `fn`, `let`, `loop`, `thread` make new scope.
 
 ### List ###
 ```
