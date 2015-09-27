@@ -50,4 +50,8 @@ class Parser {
 		}
 		return ret;
 	}
+
+	static Object parse(String s) {
+		return new Parser(Tokenizer.tokenize(s)).parse();
+	}
 }

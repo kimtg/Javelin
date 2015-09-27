@@ -76,4 +76,8 @@ class Tokenizer {
 		emit();
 		return ret;
 	}
+
+	public static ArrayList<String> tokenize(String s) {
+		return new Tokenizer(s).tokenize();
+	}
 }

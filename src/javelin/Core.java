@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.2";
+	public static final String VERSION = "0.4.3";
 
 	public Core() throws Exception {
 		init();
@@ -84,14 +84,6 @@ public class Core {
 		return (Symbol) value;
 	}
 	
-	public static ArrayList<String> tokenize(String s) {
-		return new Tokenizer(s).tokenize();
-	}
-
-	static Object parse(String s) {
-		return new Parser(tokenize(s)).parse();
-	}
-
 	@SuppressWarnings("unchecked")
 	static Object apply(Object func, ArrayList<Object> args, Environment env) throws Exception {
 		if (func instanceof IFn) {
@@ -701,7 +693,7 @@ public class Core {
 
 	public Object eval_string(String s) throws Exception {
 		s = "(" + s + "\n)";
-		ArrayList<Object> preprocessed = preprocess_all(Core.arrayListValue(parse(s)));
+		ArrayList<Object> preprocessed = preprocess_all(Core.arrayListValue(Parser.parse(s)));
 		return eval_all(preprocessed);
 	}
 

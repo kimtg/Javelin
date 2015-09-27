@@ -261,7 +261,7 @@ class Builtin {
 
 	static class read_string implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			return Core.parse(args.get(0).toString());
+			return Parser.parse(args.get(0).toString());
 		}
 	}
 
