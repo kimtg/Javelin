@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.1";
+	public static final String VERSION = "0.4.2";
 
 	public Core() throws Exception {
 		init();
@@ -151,7 +151,6 @@ public class Core {
 		set("or", Special.OR);
 		set("not", new Builtin.not());
 		set("if", Special.IF);
-		set("while", Special.WHILE);
 		set("read-string", new Builtin.read_string());
 		set("type", new Builtin.type());
 		set("eval", new Builtin.eval());
@@ -176,7 +175,6 @@ public class Core {
 		set("spit", new Builtin.spit());
 		set("thread", Special.THREAD);
 		set("def", Special.DEF);
-		set("break", Special.BREAK);
 		set("doseq", Special.DOSEQ);
 		set("str", new Builtin.str());
 		set("let", Special.LET);
@@ -193,9 +191,9 @@ public class Core {
 				);
 	}
 
-	HashMap<String, Object[]> macros = new HashMap<>();
+	static HashMap<String, Object[]> macros = new HashMap<>();
 
-	Object apply_macro(Object body, HashMap<String, Object> vars) {
+	static Object apply_macro(Object body, HashMap<String, Object> vars) {
 		if (body instanceof ArrayList) {
 			@SuppressWarnings("unchecked")
 			ArrayList<Object> bvec = (ArrayList<Object>) body;
@@ -217,7 +215,7 @@ public class Core {
 		}
 	}
 
-	Object macroexpand(Object n) {
+	static Object macroexpand(Object n) {
 		ArrayList<Object> nArrayList = Core.arrayListValue(n);
 		if (macros.containsKey(nArrayList.get(0).toString())) {
 			Object[] macro = macros.get(nArrayList.get(0).toString());
@@ -241,7 +239,7 @@ public class Core {
 			return n;
 	}
 
-	Object preprocess(Object n) {
+	static Object preprocess(Object n) {
 		if (n instanceof ArrayList) { // function (FUNCTION ARGUMENT ...)
 			ArrayList<Object> nArrayList = Core.arrayListValue(n);
 			if (nArrayList.size() == 0)
@@ -324,23 +322,6 @@ public class Core {
 							return null;
 						return eval(expr.get(3), env);
 					}
-				}
-				case WHILE: { // (while CONDITION EXPR ...)
-					try {
-						Object cond = expr.get(1);
-						int len = expr.size();
-						while (Core.booleanValue(eval(cond, env))) {
-							for (int i = 2; i < len; i++) {
-								eval(expr.get(i), env);
-							}
-						}
-					} catch (BreakException E) {
-
-					}
-					return null;
-				}
-				case BREAK: { // (break)
-					throw new BreakException();
 				}
 				case QUOTE: { // (quote X)
 					return expr.get(1);
@@ -825,5 +806,9 @@ public class Core {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public static Object preprocess_eval(Object object, Environment env) throws Exception {		
+		return eval(preprocess(object), env);
 	}
 }

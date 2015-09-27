@@ -25,7 +25,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn proxy quote read-line read-string recur set! slurp spit str symbol thread true type while
+ * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn proxy quote read-line read-string recur set! slurp spit str symbol thread true type
 Macros:
  defn when
 ```
@@ -45,10 +45,25 @@ Macros:
 ; end-of-line comment
 ```
 
+### Data types ###
+You can use all Java's data types.
+
+Literals:
+```
+> 3
+3 : java.lang.Integer
+> 3L
+3 : java.lang.Long
+> 3.0
+3.0 : java.lang.Double
+> 3e3
+3000.0 : java.lang.Double
+> "string"
+"string" : java.lang.String
+```
+
 ### Special form ###
 ```
-> (let (i 0) (while true (if (> i 5) (break)) (pr i) (set! i (+ i 1)))) ; break breaks the while loop.
-012345nil : nil
 > (let (a 1 b 2) (+ a b))
 3 : java.lang.Integer
 > (doseq (x '(1 2 3)) (pr x))
@@ -143,8 +158,8 @@ Exception in thread "main" java.lang.StackOverflowError
 
 ### Thread ###
 ```
-> (def t1 (thread (def i 1) (while (<= i 11) (pr "" i) (set! i (+ i 1))))) (def t2 (thread (def i 11) (while (<= i 20) (pr "" i) (set! i (+ i 1))))) (. t1 join) (. t2 join)
- 1 11 2 12 3  4 5 136 7 8 9  1014 15 16 17 18 19 20 nil : nil
+> (def t1 (thread (loop (i 1) (when (<= i 10) (pr "" i) (recur (+ i 1)))))) (def t2 (thread (loop (i 11) (when (<= i 20) (pr "" i) (recur (+ i 1)))))) (. t1 join) (. t2 join)
+  111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil : nil
 ```
 
 ### Java interoperability (from Javelin) ###
@@ -207,8 +222,11 @@ abc : java.lang.String
   (def stream (. url openStream))
   (def buf (new BufferedReader (new InputStreamReader stream)))
   (def r "")
-  (while (not (nil? (def s (. buf readLine))))
-    (set! r (str r s "\n")))
+  (loop ()
+    (def s (. buf readLine))
+    (when (not (nil? s))
+      (set! r (str r s "\n"))
+      (recur)))
   (. buf close)
   r)
 
@@ -218,10 +236,11 @@ abc : java.lang.String
   (def m (. p matcher text))
   (if (. m find) (. m group) ""))
 
-(while true
+(loop ()
   (prn (new Date))
   (prn (get-quote))
-  (. Thread sleep 2000L))
+  (. Thread sleep 2000)
+  (recur))
 ```
 
 ### Java interoperability (from Java) ###
