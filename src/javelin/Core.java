@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.3";
+	public static final String VERSION = "0.4.4";
 
 	public Core() throws Exception {
 		init();
@@ -179,6 +179,7 @@ public class Core {
 		eval_string("(defmacro defn (name ...) (def name (fn ...)))" +
 				"(defmacro when (cond ...) (if cond (do ...)))" +
 				"(defn nil? (x) (= nil x))" +
+				"(defmacro while (test ...) (loop () (when test ... (recur))))" +
 				"(import java.lang)"
 				);
 	}

@@ -27,7 +27,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 Predefined Symbols:
  * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn proxy quote read-line read-string recur set! slurp spit str symbol thread true type
 Macros:
- defn when
+ defn when while
 ```
 
 ## Examples ##
@@ -222,11 +222,8 @@ abc : java.lang.String
   (def stream (. url openStream))
   (def buf (new BufferedReader (new InputStreamReader stream)))
   (def r "")
-  (loop ()
-    (def s (. buf readLine))
-    (when (not (nil? s))
-      (set! r (str r s "\n"))
-      (recur)))
+  (while (not (nil? (def s (. buf readLine))))
+      (set! r (str r s "\n")))
   (. buf close)
   r)
 
