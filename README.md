@@ -25,7 +25,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if import let list map mod new nil nil? not not= or pr prn proxy quote read-line read-string set! slurp spit str symbol thread true type while
+ * + - . .get .set! / < <= = == > >= and apply break def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn proxy quote read-line read-string recur set! slurp spit str symbol thread true type while
 Macros:
  defn when
 ```
@@ -100,6 +100,26 @@ true : java.lang.Boolean
 7 : java.lang.Integer
 > (symbol "a")
 a : javelin.Core$symbol
+```
+
+#### Recur
+Evaluates the arguments in order. Execution then jumps back to the recursion point, a loop or fn method.
+
+Warning: `recur` does not check the tail position.
+```
+> (defn sum1 (n s) (if (< n 1) s (recur (- n 1) (+ s n))))
+> (defn sum (n) (sum1 n 0))
+> (defn sum-nonrecur (n) (if (< n 1) 0 (+ n (sum-nonrecur (- n 1)))))
+> (sum 100)
+5050 : java.lang.Integer
+> (sum-nonrecur 100)
+5050 : java.lang.Integer
+> (sum 1000)
+500500 : java.lang.Integer
+> (sum-nonrecur 1000) ; stack overflow
+Exception in thread "main" java.lang.StackOverflowError
+> (loop (i 0) (when (< i 5) (pr i) (recur (+ i 1))))
+01234nil : nil
 ```
 
 ### Scope ###

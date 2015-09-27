@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4";
+	public static final String VERSION = "0.4.1";
 
 	public Core() throws Exception {
 		init();
@@ -183,6 +183,8 @@ public class Core {
 		set("symbol", new Builtin.symbol());
 		set("import", Special.IMPORT);
 		set("proxy", Special.PROXY);
+		set("recur", Special.RECUR);
+		set("loop", Special.LOOP);
 
 		eval_string("(defmacro defn (name ...) (def name (fn ...)))" +
 				"(defmacro when (cond ...) (if cond (do ...)))" +
@@ -621,6 +623,44 @@ public class Core {
 					InvocationHandler handler = new MyHandler(methods, env);
 					Object ret = Proxy.newProxyInstance(cl, new Class[] {cls}, handler);
 					return ret;
+				}
+				case RECUR: // (recur ARG ...)
+				{
+					ArrayList<Object> args = new ArrayList<Object>();
+					for (int i = 1; i < expr.size(); i++) {
+						args.add(eval(expr.get(i), env));
+					}
+					throw new RecurException(args);
+				}
+				case LOOP: // (loop (VAR VALUE ...) BODY ...)
+				{
+					// separate formal and actual parameters
+					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
+					ArrayList<Object> formalParams = new ArrayList<Object>();
+					ArrayList<Object> actualParams = new ArrayList<Object>();
+					Environment env2 = new Environment(env);
+					for (int i = 0; i < bindings.size(); i+= 2) {
+						formalParams.add(bindings.get(i));
+						actualParams.add(eval(bindings.get(i + 1), env2));
+					}
+					
+					loopStart: while (true) {
+						// fill the environment
+						for (int i = 0; i < formalParams.size(); i++) {
+							env2.def(Core.symbolValue(formalParams.get(i)).code, actualParams.get(i));
+						}
+						// evaluate body
+						Object ret = null;
+						for (int i = 2; i < expr.size(); i++) {
+							try {
+								ret = eval(expr.get(i), env2);
+							} catch (RecurException e) {
+								actualParams = e.args;
+								continue loopStart; // recur this loop (effectively goto)
+							}
+						}
+						return ret;
+					}
 				}
 				default: {
 					System.err.println("Not implemented function: [" + func.toString() + "]");
