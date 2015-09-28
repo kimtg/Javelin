@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.5";
+	public static final String VERSION = "0.4.6";
 
 	public Core() throws Exception {
 		init();
@@ -175,7 +175,7 @@ public class Core {
 		set("let", Special.LET);
 		set("symbol", new Builtin.symbol());
 		set("import", Special.IMPORT);
-		set("proxy", Special.PROXY);
+		set("reify", Special.REIFY);
 		set("recur", Special.RECUR);
 		set("loop", Special.LOOP);
 
@@ -560,19 +560,25 @@ public class Core {
 					}
 					return imports;
 				}
-				case PROXY: // (proxy INTERFACE (METHOD (ARGS ...) BODY ...) ...)
+				case REIFY: // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
 				{
-// example:
+// Note that the first parameter must be supplied to
+// correspond to the target object ('this' in Java parlance). Thus
+// methods for interfaces will take one more argument than do the
+// interface declarations.
+//
+// Example:
 //					(import javax.swing java.awt java.awt.event)
 //
 //					(def frame (new JFrame))
 //					(def button (new Button "Hello"))
 //					(. button addActionListener
-//						(proxy ActionListener
-//						  (actionPerformed (e)
-//							(. javax.swing.JOptionPane showMessageDialog nil "Hello, World!"))))
+//						(reify java.awt.event.ActionListener
+//						  (actionPerformed (this e)
+//							(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
 //					(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
 //					(. frame add button (.get BorderLayout NORTH))
+//					(. frame pack)
 //					(. frame setVisible true)
 
 					Class<?> cls = getClass(expr.get(1).toString());
@@ -594,7 +600,10 @@ public class Core {
 						
 						@Override
 						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-							return apply(methods.get(method.getName()), new ArrayList<Object>(Arrays.asList(args)), env);							
+							ArrayList<Object> args2 = new ArrayList<Object>();
+							args2.add(this);
+							args2.addAll(Arrays.asList(args));
+							return apply(methods.get(method.getName()), args2, env);
 						}
 					}
 					InvocationHandler handler = new MyHandler(methods, env);

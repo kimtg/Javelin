@@ -28,16 +28,16 @@
 	(str (eval-string code)))
 
 (. button addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(eval-code (. text getText)))))
 
 (defn eval-print (code)
 	(prn (str "> " code "\n" (eval-code code))))
 
 (. textf addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(eval-print (. textf getText))
 		(. textf setText nil))))
 
@@ -70,14 +70,14 @@
 (. frame setJMenuBar menuBar)
 
 (. menuNew addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(updateFileName "")
 		(. text setText ""))))
 
 (. menuOpen addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(when (= (. fc showOpenDialog nil) (.get javax.swing.JFileChooser APPROVE_OPTION))
 		  (let (fileName (. (. fc getSelectedFile) getCanonicalPath))
 				  (updateFileName fileName)
@@ -93,20 +93,20 @@
 		(fileSave fileName))))
 
 (. menuSave addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(if (= aCurFileName "")
 		  (fileSaveAs)
 		  (fileSave aCurFileName)))))
 
 (. menuSaveAs addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(fileSaveAs))))
 
 (. menuExit addActionListener
-	(proxy ActionListener
-	  (actionPerformed (e)
+	(reify ActionListener
+	  (actionPerformed (this e)
 		(. System exit 0))))
 
 (. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))

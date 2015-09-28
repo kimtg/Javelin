@@ -25,7 +25,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn proxy quote read-line read-string recur set! slurp spit str symbol thread true type
+ * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn quote read-line read-string recur reify set! slurp spit str symbol thread true type
 Macros:
  defn when while
 ```
@@ -196,16 +196,16 @@ abc : java.lang.String
 1267650600228229401496703205376 : java.math.BigInteger
 ```
 
-#### Proxy example
+#### Reify example
 ```
 (import javax.swing java.awt java.awt.event)
 
 (def frame (new JFrame))
 (def button (new Button "Hello"))
 (. button addActionListener
-	(proxy java.awt.event.ActionListener
-	  (actionPerformed (e)
-		(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World! " e)))))
+	(reify java.awt.event.ActionListener
+	  (actionPerformed (this e)
+		(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
 (. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
 (. frame add button (.get BorderLayout NORTH))
 (. frame pack)
