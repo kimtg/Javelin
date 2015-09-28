@@ -215,21 +215,11 @@ abc : java.lang.String
 #### KOSPI200 Ticker
 ```
 ; KOSPI200 Ticker (C) 2015 KIM Taegyoon
-(import java.net java.io java.util)
+(import java.util)
 
-(defn read-url (address)
-  (def url (new URL address))
-  (def stream (. url openStream))
-  (def buf (new BufferedReader (new InputStreamReader stream)))
-  (def r "")
-  (while (not (nil? (def s (. buf readLine))))
-      (set! r (str r s "\n")))
-  (. buf close)
-  r)
-
+(def p (. regex.Pattern compile "KOSPI200.*</font>"))
 (defn get-quote ()
-  (def text (read-url "http://kosdb.koscom.co.kr/main/jisuticker.html"))
-  (def p (. regex.Pattern compile "KOSPI200.*</font>"))
+  (def text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html"))
   (def m (. p matcher text))
   (if (. m find) (. m group) ""))
 

@@ -4,11 +4,14 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,7 +20,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.4";
+	public static final String VERSION = "0.4.5";
 
 	public Core() throws Exception {
 		init();
@@ -739,9 +742,23 @@ public class Core {
 		}
 	}
 
-	// extracts characters from filename
-	public static String slurp(String fileName) throws IOException {
-		return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(fileName)));
+	// extracts characters from URL or filename
+	public static String slurp(String urlOrFileName) throws IOException {
+		try {
+			// try URL
+			URL url = new URL(urlOrFileName);
+			InputStream is = url.openStream();
+			try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+				String line;
+				StringBuffer sb = new StringBuffer();
+				while ((line = br.readLine()) != null) {
+					sb.append(line);
+				}
+				return sb.toString();
+			}
+		} catch (MalformedURLException e) {
+			return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(urlOrFileName)));
+		}
 	}
 
 	// Opposite of slurp. Writes str to filename.
