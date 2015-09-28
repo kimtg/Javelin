@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.6";
+	public static final String VERSION = "0.4.7";
 
 	public Core() throws Exception {
 		init();
@@ -86,7 +86,7 @@ public class Core {
 	static public Symbol symbolValue(Object value) {
 		return (Symbol) value;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	static Object apply(Object func, ArrayList<Object> args, Environment env) throws Exception {
 		if (func instanceof IFn) {
@@ -96,7 +96,7 @@ public class Core {
 				// implicit indexing
 				return ((List<Object>) func).get(Core.intValue(args.get(0)));
 			}
-			else {				
+			else {
 				System.err.println("Unknown function: [" + func.toString() + "]");
 				return null;
 			}
@@ -125,7 +125,7 @@ public class Core {
 		print_collection(macros.keySet());
 	}
 
-	void init() throws Exception {		
+	void init() throws Exception {
 		set("true", true);
 		set("false", false);
 		set("nil", null);
@@ -271,8 +271,8 @@ public class Core {
 			ArrayList<Object> expr = Core.arrayListValue(n);
 			if (expr.size() == 0)
 				return null;
-			Object func = eval(expr.get(0), env);			
-			if (func instanceof Special) {				
+			Object func = eval(expr.get(0), env);
+			if (func instanceof Special) {
 				switch ((Special) func) {
 				case SET_E: { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
 					Object value = null;
@@ -346,7 +346,7 @@ public class Core {
 					try {
 						// get class
 						Class<?> cls;
-						Object obj = null;						
+						Object obj = null;
 						try {
 							// object's method e.g. (. "abc" length)
 							obj = eval(expr.get(1), env);
@@ -356,13 +356,13 @@ public class Core {
 							String className = expr.get(1).toString();
 							cls = getClass(className);
 						}
-						
+
 						Class<?>[] parameterTypes = new Class<?>[expr.size() - 3];
 						ArrayList<Object> parameters = new ArrayList<Object>();
 						int last = expr.size() - 1;
 						for (int i = 3; i <= last; i++) {
 							Object a = eval(expr.get(i), env);
-							Object param = a;							
+							Object param = a;
 							parameters.add(param);
 							Class<?> paramClass;
 							if (param instanceof Integer)
@@ -392,10 +392,10 @@ public class Core {
 									} catch (IllegalArgumentException iae) {
 										// try next method
 										continue;
-									}	
+									}
 								}
 							}
-						}						
+						}
 						throw new IllegalArgumentException(expr.toString());
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -408,7 +408,7 @@ public class Core {
 					try {
 						// get class
 						Class<?> cls;
-						Object obj = null;						
+						Object obj = null;
 						try {
 							// object's method e.g. (. "abc" length)
 							obj = eval(expr.get(1), env);
@@ -418,7 +418,7 @@ public class Core {
 							String className = expr.get(1).toString();
 							cls = getClass(className);
 						}
-						
+
 						String fieldName = expr.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
 						return field.get(cls);
@@ -433,7 +433,7 @@ public class Core {
 					try {
 						// get class
 						Class<?> cls;
-						Object obj = null;						
+						Object obj = null;
 						try {
 							// object's method e.g. (. "abc" length)
 							obj = eval(expr.get(1), env);
@@ -443,7 +443,7 @@ public class Core {
 							String className = expr.get(1).toString();
 							cls = getClass(className);
 						}
-						
+
 						String fieldName = expr.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
 						Object value = eval(expr.get(3), env);
@@ -482,7 +482,7 @@ public class Core {
 							}
 							parameterTypes[i - 2] = paramClass;
 						}
-						 
+
 						try {
 							Constructor<?> c = cls.getConstructor(parameterTypes);
 							return c.newInstance(parameters.toArray());
@@ -592,12 +592,12 @@ public class Core {
 					class MyHandler implements InvocationHandler {
 						HashMap<String, Fn> methods;
 						Environment env;
-						
+
 						public MyHandler(HashMap<String, Fn> methods, Environment env) {
 							this.methods = methods;
 							this.env = env;
 						}
-						
+
 						@Override
 						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 							ArrayList<Object> args2 = new ArrayList<Object>();
@@ -629,7 +629,7 @@ public class Core {
 						formalParams.add(bindings.get(i));
 						actualParams.add(eval(bindings.get(i + 1), env2));
 					}
-					
+
 					loopStart: while (true) {
 						// fill the environment
 						for (int i = 0; i < formalParams.size(); i++) {
@@ -668,19 +668,30 @@ public class Core {
 		}
 	}
 
+	static HashMap<String, Class<?>> getClassCache = new HashMap<>();
+
+	// cached
 	private static Class<?> getClass(String className) throws ClassNotFoundException {
-		try {
-			return Class.forName(className);
-		} catch (ClassNotFoundException cnfe) {
-			for (String prefix : imports) {
-				try {
-					return Class.forName(prefix + "." + className);
-				} catch (ClassNotFoundException e) {
-					// try next import prefix
-					continue;
+		if (getClassCache.containsKey(className)) {
+			return getClassCache.get(className);
+		} else {
+			try {
+				Class<?> value = Class.forName(className);
+				getClassCache.put(className, value);
+				return value;
+			} catch (ClassNotFoundException cnfe) {
+				for (String prefix : imports) {
+					try {
+						Class<?> value = Class.forName(prefix + "." + className);
+						getClassCache.put(className, value);
+						return value;
+					} catch (ClassNotFoundException e) {
+						// try next import prefix
+						continue;
+					}
 				}
+				throw new ClassNotFoundException(className);
 			}
-			throw new ClassNotFoundException(className);
 		}
 	}
 
@@ -827,7 +838,7 @@ public class Core {
 		}
 	}
 
-	public static Object preprocess_eval(Object object, Environment env) throws Exception {		
+	public static Object preprocess_eval(Object object, Environment env) throws Exception {
 		return eval(preprocess(object), env);
 	}
 }
