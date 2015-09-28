@@ -7,6 +7,8 @@ Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal
 ## Compile ##
 Run `compile.bat`.
 
+On Unix, use *.sh files.
+
 ## Run ##
 Run `javelin.bat` or,
 ```
