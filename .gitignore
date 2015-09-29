@@ -11,3 +11,4 @@ nbproject/private/
 *.swp
 *.out
 /bin/
+*.jar

@@ -23,15 +23,22 @@ class Tokenizer {
 		int last = s.length() - 1;
 		for (int pos = 0; pos <= last; pos++) {
 			char c = s.charAt(pos);
-			if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+			if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == ',') { // whitespace
 				emit();
 			} else if (c == ';') { // end-of-line comment
 				emit();
 				do
 					pos++;
 				while (pos <= last && s.charAt(pos) != '\n');
-			} else if (c == '\'') { // quote
+			} else if (c == '\'' || c == '`') { // quote or quasiquote
 				acc += c;
+				emit();
+			} else if (c == '~') { // unquote
+				acc += c;
+				if (s.charAt(pos + 1) == '@') { // unquote-splicing
+					acc += '@';
+					pos++;
+				}
 				emit();
 			} else if (c == '"') { // beginning of string
 				unclosed++;

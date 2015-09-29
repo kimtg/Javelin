@@ -5,7 +5,7 @@
 Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal Lisp for the Java Virtual Machine).
 
 ## Compile ##
-Run `compile.bat`.
+Run `compile.bat`. This script makes a runnable JAR file.
 
 On Unix, use *.sh files.
 
@@ -14,8 +14,8 @@ Run `javelin.bat` or,
 ```
 Usage:
 java javelin.Core [OPTIONS...] [FILES...]
-java -cp javelin-version.jar javelin.Core [OPTIONS...] [FILES...]
-java -jar javelin-version.jar [OPTIONS...] [FILES...]
+java -cp javelin.jar javelin.Core [OPTIONS...] [FILES...]
+java -jar javelin.jar [OPTIONS...] [FILES...]
 
 OPTIONS:
     -h    print this screen.
@@ -27,7 +27,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop map mod new nil nil? not not= or pr prn quote read-line read-string recur reify set! slurp spit str symbol thread true type
+ * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop macroexpand map mod new nil nil? not not= or pr prn quasiquote quote read-line read-string recur reify set! slurp spit str symbol thread true type unquote unquote-splicing
 Macros:
  defn when while
 ```
@@ -42,9 +42,20 @@ Macros:
 (. javax.swing.JOptionPane showMessageDialog nil "Hello, World!") ; GUI Hello, World!
 ```
 
+### Whitespace ###
+` `, `\t`, `\r`, `\n`, `,` are whitespaces.
+
 ### Comment ###
 ```
 ; end-of-line comment
+```
+
+### Reader syntax ###
+```
+' quote
+` quasiquote
+~ unquote
+~@ unquote-splicing
 ```
 
 ### Data types ###
@@ -66,7 +77,7 @@ Literals:
 
 ### Special form ###
 ```
-> (let (a 1 b 2) (+ a b))
+> (let (a 1, b 2) (+ a b)) ; , is whitespace.
 3 : java.lang.Integer
 > (doseq (x '(1 2 3)) (pr x))
 123nil : nil
@@ -153,9 +164,19 @@ Exception in thread "main" java.lang.StackOverflowError
 ```
 
 ### Macro ###
+Macro is non-hygienic.
+
 ```
-> (defmacro infix (a op ...) (op a ...)) (infix 3 + 4 5)
-12
+> (defmacro infix (a op & more) `(~op ~a ~@more))
+nil : nil
+> (infix 3 + 4)
+7 : java.lang.Integer
+> (infix 3 + 4 5)
+12 : java.lang.Integer
+> (macroexpand '(infix 3 + 4 5))
+[+, 3, 4, 5] : java.util.ArrayList
+> (macroexpand '(while true (prn 1)))
+[loop, [], [if, true, [do, [prn, 1], [recur]]]] : java.util.ArrayList
 ```
 
 ### Thread ###

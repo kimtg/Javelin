@@ -20,6 +20,24 @@ class Parser {
 			ret.add(new Symbol("quote"));
 			ret.add(parse());
 			return ret;
+		} else if (tok.equals("`")) { // quasiquote
+			pos++;
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("quasiquote"));
+			ret.add(parse());
+			return ret;
+		} else if (tok.equals("~")) { // unquote
+			pos++;
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("unquote"));
+			ret.add(parse());
+			return ret;
+		} else if (tok.equals("~@")) { // unquote-splicing
+			pos++;
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("unquote-splicing"));
+			ret.add(parse());
+			return ret;
 		} else if (tok.equals("(")) { // list
 			pos++;
 			return parseList();

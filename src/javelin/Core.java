@@ -20,10 +20,72 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.8";
+	public static final String VERSION = "0.5";
 
 	public Core() throws Exception {
-		init();
+		set("true", true);
+		set("false", false);
+		set("nil", null);
+
+		set("+", new Builtin._plus());
+		set("-", new Builtin._minus());
+		set("*", new Builtin._star());
+		set("/", new Builtin._slash());
+		set("mod", new Builtin.mod());
+		set("=", new Builtin._eq());
+		set("==", new Builtin._eq_eq());
+		set("not=", new Builtin.Not_eq());
+		set("<", new Builtin._lt());
+		set(">", new Builtin._gt());
+		set("<=", new Builtin._lt_eq());
+		set(">=", new Builtin._gt_eq());
+		set("and", Special.AND);
+		set("or", Special.OR);
+		set("not", new Builtin.not());
+		set("if", Special.IF);
+		set("read-string", new Builtin.read_string());
+		set("type", new Builtin.type());
+		set("eval", new Builtin.eval());
+		set("quote", Special.QUOTE);
+		set("fn", Special.FN);
+		set("list", new Builtin.list());
+		set("apply", new Builtin.apply());
+		set("fold", new Builtin.fold());
+		set("map", new Builtin.map());
+		set("filter", new Builtin.filter());
+		set("do", Special.DO);
+		set(".", Special._DOT);
+		set(".get", Special._DOTGET);
+		set(".set!", Special._DOTSET_E);
+		set("new", Special.NEW);
+		set("set!", Special.SET_E);
+		set("pr", new Builtin.pr());
+		set("prn", new Builtin.prn());
+		set("defmacro", Special.DEFMACRO);
+		set("read-line", new Builtin.read_line());
+		set("slurp", new Builtin.slurp());
+		set("spit", new Builtin.spit());
+		set("thread", Special.THREAD);
+		set("def", Special.DEF);
+		set("doseq", Special.DOSEQ);
+		set("str", new Builtin.str());
+		set("let", Special.LET);
+		set("symbol", new Builtin.symbol());
+		set("import", Special.IMPORT);
+		set("reify", Special.REIFY);
+		set("recur", Special.RECUR);
+		set("loop", Special.LOOP);
+		set("quasiquote", Special.QUASIQUOTE);
+		set("unquote", Special.UNQUOTE);
+		set("unquote-splicing", Special.UNQUOTE_SPLICING);
+		set("macroexpand", Special.MACROEXPAND);
+
+		evalString("(defmacro defn (name & body) `(def ~name (fn ~@body)))" +
+				"(defmacro when (cond & body) `(if ~cond (do ~@body)))" +
+				"(defn nil? (x) (= nil x))" +
+				"(defmacro while (test & body) `(loop () (when ~test ~@body (recur))))" +
+				"(import java.lang)"
+				);
 	}
 
 	static int intValue(Object value) {
@@ -125,137 +187,42 @@ public class Core {
 		printCollection(macros.keySet());
 	}
 
-	void init() throws Exception {
-		set("true", true);
-		set("false", false);
-		set("nil", null);
+	static HashMap<String, Fn> macros = new HashMap<>();
 
-		set("+", new Builtin._plus());
-		set("-", new Builtin._minus());
-		set("*", new Builtin._star());
-		set("/", new Builtin._slash());
-		set("mod", new Builtin.mod());
-		set("=", new Builtin._eq());
-		set("==", new Builtin._eq_eq());
-		set("not=", new Builtin.Not_eq());
-		set("<", new Builtin._lt());
-		set(">", new Builtin._gt());
-		set("<=", new Builtin._lt_eq());
-		set(">=", new Builtin._gt_eq());
-		set("and", Special.AND);
-		set("or", Special.OR);
-		set("not", new Builtin.not());
-		set("if", Special.IF);
-		set("read-string", new Builtin.read_string());
-		set("type", new Builtin.type());
-		set("eval", new Builtin.eval());
-		set("quote", Special.QUOTE);
-		set("fn", Special.FN);
-		set("list", new Builtin.list());
-		set("apply", new Builtin.apply());
-		set("fold", new Builtin.fold());
-		set("map", new Builtin.map());
-		set("filter", new Builtin.filter());
-		set("do", Special.DO);
-		set(".", Special._DOT);
-		set(".get", Special._DOTGET);
-		set(".set!", Special._DOTSET_E);
-		set("new", Special.NEW);
-		set("set!", Special.SET_E);
-		set("pr", new Builtin.pr());
-		set("prn", new Builtin.prn());
-		set("defmacro", Special.DEFMACRO);
-		set("read-line", new Builtin.read_line());
-		set("slurp", new Builtin.slurp());
-		set("spit", new Builtin.spit());
-		set("thread", Special.THREAD);
-		set("def", Special.DEF);
-		set("doseq", Special.DOSEQ);
-		set("str", new Builtin.str());
-		set("let", Special.LET);
-		set("symbol", new Builtin.symbol());
-		set("import", Special.IMPORT);
-		set("reify", Special.REIFY);
-		set("recur", Special.RECUR);
-		set("loop", Special.LOOP);
+	private static Object macroexpand(Object n) throws Exception {
+		ArrayList<Object> expr = Core.arrayListValue(n);
+		if (macros.containsKey(expr.get(0).toString())) {
+			Fn func = macros.get(expr.get(0).toString());
 
-		evalString("(defmacro defn (name ...) (def name (fn ...)))" +
-				"(defmacro when (cond ...) (if cond (do ...)))" +
-				"(defn nil? (x) (= nil x))" +
-				"(defmacro while (test ...) (loop () (when test ... (recur))))" +
-				"(import java.lang)"
-				);
-	}
-
-	static HashMap<String, Object[]> macros = new HashMap<>();
-
-	static Object applyMacro(Object body, HashMap<String, Object> vars) {
-		if (body instanceof ArrayList) {
-			@SuppressWarnings("unchecked")
-			ArrayList<Object> bvec = (ArrayList<Object>) body;
-			ArrayList<Object> ret = new ArrayList<>();
-			for (int i = 0; i < bvec.size(); i++) {
-				Object b = bvec.get(i);
-				if (b.toString().equals("...")) { // ... is like unquote-splicing
-					ret.addAll(Core.arrayListValue(vars.get(b.toString())));
-				} else
-					ret.add(applyMacro(bvec.get(i), vars));
+			// build arguments
+			ArrayList<Object> args = new ArrayList<Object>();
+			int len = expr.size();
+			for (int i = 1; i < len; i++) {
+				args.add(expr.get(i));
 			}
-			return ret;
+			Object r = apply(func, args, globalEnv);
+			return r;
 		} else {
-			String bstr = body.toString();
-			if (vars.containsKey(bstr))
-				return vars.get(bstr);
-			else
-				return body;
+			ArrayList<Object> r = new ArrayList<Object>();
+			for (Object n2 : expr) {
+				r.add(preprocess(n2));
+			}
+			return r;
 		}
 	}
 
-	static Object macroexpand(Object n) {
-		ArrayList<Object> nArrayList = Core.arrayListValue(n);
-		if (macros.containsKey(nArrayList.get(0).toString())) {
-			Object[] macro = macros.get(nArrayList.get(0).toString());
-			HashMap<String, Object> macrovars = new HashMap<>();
-			ArrayList<Object> argsyms = Core.arrayListValue(macro[0]);
-			for (int i = 0; i < argsyms.size(); i++) {
-				String argsym = argsyms.get(i).toString();
-				if (argsym.equals("...")) {
-					ArrayList<Object> n2 = new ArrayList<Object>();
-					macrovars.put(argsym, n2);
-					ArrayList<Object> ellipsis = n2;
-					for (int i2 = i + 1; i2 < nArrayList.size(); i2++)
-						ellipsis.add(nArrayList.get(i2));
-					break;
-				} else {
-					macrovars.put(argsyms.get(i).toString(), nArrayList.get(i + 1));
-				}
-			}
-			return applyMacro(macro[1], macrovars);
-		} else
-			return n;
-	}
-
-	static Object preprocess(Object n) {
+	static Object preprocess(Object n) throws Exception {
 		if (n instanceof ArrayList) { // function (FUNCTION ARGUMENT ...)
-			ArrayList<Object> nArrayList = Core.arrayListValue(n);
-			if (nArrayList.size() == 0)
+			ArrayList<Object> expr = Core.arrayListValue(n);
+			if (expr.size() == 0)
 				return n;
-			Object func = preprocess(nArrayList.get(0));
-			if (func instanceof Symbol && func.toString().equals(("defmacro"))) {
-				// (defmacro add (a b) (+ a b)) ; define macro
-				macros.put(nArrayList.get(1).toString(), new Object[] { nArrayList.get(2), nArrayList.get(3) });
+			Object func = preprocess(expr.get(0));
+			if (func instanceof Symbol && func.toString().equals("defmacro")) {
+				// (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
+				macros.put(expr.get(1).toString(), new Fn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
 				return null;
 			} else {
-				if (macros.containsKey(nArrayList.get(0).toString())) { // compile
-																			// macro
-					return preprocess(macroexpand(n));
-				} else {
-					ArrayList<Object> r = new ArrayList<Object>();
-					for (Object n2 : nArrayList) {
-						r.add(preprocess(n2));
-					}
-					return r;
-				}
+				return macroexpand(n);
 			}
 		} else {
 			return n;
@@ -648,6 +615,19 @@ public class Core {
 						return ret;
 					}
 				}
+				case QUASIQUOTE: // (quasiquote S-EXPRESSION)
+				{
+					return quasiquote(expr.get(1), env);
+				}
+				case UNQUOTE:
+				case UNQUOTE_SPLICING:
+				{
+					throw new Exception("Invalid syntax"); // unused outside a quasiquote
+				}
+				case MACROEXPAND: // (macroexpand X)
+				{
+					return preprocess(preprocessEval(expr.get(1), env));
+				}
 				default: {
 					System.err.println("Not implemented function: [" + func.toString() + "]");
 					return null;
@@ -665,6 +645,46 @@ public class Core {
 		} else {
 			// return n.clone();
 			return n;
+		}
+	}
+
+	private static Object quasiquote(Object arg, Environment env) throws Exception {
+		if (arg instanceof ArrayList && ((ArrayList<?>) arg).size() > 0) {
+			@SuppressWarnings("unchecked")
+			ArrayList<Object> arg2 = (ArrayList<Object>) arg;
+			Object head = arg2.get(0);
+			if (head instanceof Symbol && ((Symbol) head).toString().equals("unquote")) {
+				return preprocessEval(arg2.get(1), env);
+			}
+			ArrayList<Object> ret = new ArrayList<>();
+			for (Object a : arg2) {
+				if (a instanceof ArrayList) {
+					@SuppressWarnings("unchecked")
+					ArrayList<Object> a2 = (ArrayList<Object>) a;
+					if (a2.size() > 0) {
+						Object head2 = a2.get(0);
+						if (head2 instanceof Symbol) {
+							String s = head2.toString();
+							if (s.equals("unquote")) {
+								ret.add(preprocessEval(a2.get(1), env));
+							} else if (s.equals("unquote-splicing")) {
+								ret.addAll(Core.arrayListValue(preprocessEval(a2.get(1), env)));
+							} else {
+								ret.add(quasiquote(a, env));
+							}
+						} else {
+							ret.add(quasiquote(a, env));
+						}
+					} else {
+						ret.add(quasiquote(a, env));
+					}
+				} else {
+					ret.add(a);
+				}
+			}
+			return ret;
+		} else {
+			return arg;
 		}
 	}
 
@@ -695,7 +715,7 @@ public class Core {
 		}
 	}
 
-	ArrayList<Object> preprocessAll(ArrayList<Object> lst) {
+	ArrayList<Object> preprocessAll(ArrayList<Object> lst) throws Exception {
 		ArrayList<Object> preprocessed = new ArrayList<Object>();
 		int last = lst.size() - 1;
 		for (int i = 0; i <= last; i++) {
@@ -838,7 +858,7 @@ public class Core {
 		}
 	}
 
-	public static Object preprocess_eval(Object object, Environment env) throws Exception {
+	public static Object preprocessEval(Object object, Environment env) throws Exception {
 		return eval(preprocess(object), env);
 	}
 }

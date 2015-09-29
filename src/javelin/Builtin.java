@@ -273,7 +273,7 @@ class Builtin {
 
 	static class eval implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			return Core.preprocess_eval(args.get(0), env);
+			return Core.preprocessEval(args.get(0), env);
 		}
 	}
 
