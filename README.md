@@ -82,17 +82,17 @@ In a function, [lexical scoping](http://en.wikipedia.org/wiki/Lexical_scoping#Le
 > ((fn (x) (* x 2)) 3)
 6 : java.lang.Integer
 > (defn foo (x & more) (list x more)) ; variadic function
-#<function:[[x, &, more], [list, x, more]]> : javelin.Core$fn
+#<function:[[x, &, more], [list, x, more]]> : javelin.Core$Fn
 > (foo 1 2 3 4 5)
 [1, [2, 3, 4, 5]] : java.util.ArrayList
 > (defn sum (x y) (+ x y))
-#<function:[[x, y], [+, x, y]]> : javelin.Core$fn
+#<function:[[x, y], [+, x, y]]> : javelin.Core$Fn
 > (sum 1 2)
 3 : java.lang.Integer
 > (fold + '(1 2 3))
 6 : java.lang.Integer
 > (defn even? (x) (== 0 (mod x 2)))
-#<function:[[x], [==, 0, [mod, x, 2]]]> : javelin.Core$fn
+#<function:[[x], [==, 0, [mod, x, 2]]]> : javelin.Core$Fn
 > (even? 3)
 false : java.lang.Boolean
 > (even? 4)
@@ -116,7 +116,7 @@ true : java.lang.Boolean
   (add3 4)
 7 : java.lang.Integer
 > (symbol "a")
-a : javelin.Core$symbol
+a : javelin.Core$Symbol
 ```
 
 #### Recur
