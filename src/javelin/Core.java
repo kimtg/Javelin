@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.4.7";
+	public static final String VERSION = "0.4.8";
 
 	public Core() throws Exception {
 		init();
@@ -71,7 +71,7 @@ public class Core {
 			return value.getClass().getName();
 	}
 
-	static String str_with_type(Object value) {
+	static String strWithType(Object value) {
 		String s = "";
 		if (value == null) s = "nil";
 		else if (value instanceof String) s = "\"" + value + "\"";
@@ -103,26 +103,26 @@ public class Core {
 		}
 	}
 
-	Environment global_env = new Environment(); // variables. compile-time
+	static Environment globalEnv = new Environment(); // variables. compile-time
 	static ArrayList<String> imports = new ArrayList<String>();
 
-	void print_collection(Collection<String> coll) {
+	static void printCollection(Collection<String> coll) {
 		for (String key : new TreeSet<String>(coll)) {
 			System.out.print(" " + key);
 		}
 		System.out.println();
 	}
 
-	public void print_logo() {
+	public static void printLogo() {
 		System.out.println("Javelin " + VERSION);
 		System.out.println("Predefined Symbols:");
-		ArrayList<String> r = new ArrayList<String>(global_env.env.keySet().size());
-		for (int x : global_env.env.keySet()) {
+		ArrayList<String> r = new ArrayList<String>(globalEnv.env.keySet().size());
+		for (int x : globalEnv.env.keySet()) {
 			r.add(Symbol.symname.get(x));
 		}
-		print_collection(r);
+		printCollection(r);
 		System.out.println("Macros:");
-		print_collection(macros.keySet());
+		printCollection(macros.keySet());
 	}
 
 	void init() throws Exception {
@@ -179,7 +179,7 @@ public class Core {
 		set("recur", Special.RECUR);
 		set("loop", Special.LOOP);
 
-		eval_string("(defmacro defn (name ...) (def name (fn ...)))" +
+		evalString("(defmacro defn (name ...) (def name (fn ...)))" +
 				"(defmacro when (cond ...) (if cond (do ...)))" +
 				"(defn nil? (x) (= nil x))" +
 				"(defmacro while (test ...) (loop () (when test ... (recur))))" +
@@ -189,7 +189,7 @@ public class Core {
 
 	static HashMap<String, Object[]> macros = new HashMap<>();
 
-	static Object apply_macro(Object body, HashMap<String, Object> vars) {
+	static Object applyMacro(Object body, HashMap<String, Object> vars) {
 		if (body instanceof ArrayList) {
 			@SuppressWarnings("unchecked")
 			ArrayList<Object> bvec = (ArrayList<Object>) body;
@@ -199,7 +199,7 @@ public class Core {
 				if (b.toString().equals("...")) { // ... is like unquote-splicing
 					ret.addAll(Core.arrayListValue(vars.get(b.toString())));
 				} else
-					ret.add(apply_macro(bvec.get(i), vars));
+					ret.add(applyMacro(bvec.get(i), vars));
 			}
 			return ret;
 		} else {
@@ -230,7 +230,7 @@ public class Core {
 					macrovars.put(argsyms.get(i).toString(), nArrayList.get(i + 1));
 				}
 			}
-			return apply_macro(macro[1], macrovars);
+			return applyMacro(macro[1], macrovars);
 		} else
 			return n;
 	}
@@ -695,7 +695,7 @@ public class Core {
 		}
 	}
 
-	ArrayList<Object> preprocess_all(ArrayList<Object> lst) {
+	ArrayList<Object> preprocessAll(ArrayList<Object> lst) {
 		ArrayList<Object> preprocessed = new ArrayList<Object>();
 		int last = lst.size() - 1;
 		for (int i = 0; i <= last; i++) {
@@ -704,25 +704,25 @@ public class Core {
 		return preprocessed;
 	}
 
-	Object eval_all(ArrayList<Object> lst) throws Exception {
+	Object evalAll(ArrayList<Object> lst) throws Exception {
 		int last = lst.size() - 1;
 		if (last < 0)
 			return null;
 		Object ret = null;
 		for (int i = 0; i <= last; i++) {
-			ret = eval(lst.get(i), global_env);
+			ret = eval(lst.get(i), globalEnv);
 		}
 		return ret;
 	}
 
-	public Object eval_string(String s) throws Exception {
+	public Object evalString(String s) throws Exception {
 		s = "(" + s + "\n)";
-		ArrayList<Object> preprocessed = preprocess_all(Core.arrayListValue(Parser.parse(s)));
-		return eval_all(preprocessed);
+		ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(Parser.parse(s)));
+		return evalAll(preprocessed);
 	}
 
-	void eval_print(String s) throws Exception {
-		System.out.println(Core.str_with_type(eval_string(s)));
+	void evalPrint(String s) throws Exception {
+		System.out.println(Core.strWithType(evalString(s)));
 	}
 
 	static void prompt() {
@@ -745,14 +745,14 @@ public class Core {
 					prompt2();
 				String line = br.readLine();
 				if (line == null) { // EOF
-					eval_print(code);
+					evalPrint(code);
 					break;
 				}
 				code += "\n" + line;
 				Tokenizer t = new Tokenizer(code);
 				t.tokenize();
 				if (t.unclosed <= 0) { // no unmatched parenthesis nor quotation
-					eval_print(code);
+					evalPrint(code);
 					code = "";
 				}
 			} catch (Exception e) {
@@ -796,12 +796,12 @@ public class Core {
 
 	// for embedding
 	public Object get(String s) throws Exception {
-		return global_env.get(Symbol.toCode(s));
+		return globalEnv.get(Symbol.toCode(s));
 	}
 
 	// for embedding
 	public Object set(String s, Object o) {
-		return global_env.def(Symbol.toCode(s), o);
+		return globalEnv.def(Symbol.toCode(s), o);
 	}
 
 	public static Object testField;
@@ -809,7 +809,7 @@ public class Core {
 	public static void main(String[] args) throws Exception {
 		if (args.length == 0) {
 			Core p = new Core();
-			p.print_logo();
+			printLogo();
 			p.repl();
 			System.out.println();
 			return;
@@ -831,7 +831,7 @@ public class Core {
 		for (String fileName : args) {
 			Core p = new Core();
 			try {
-				p.eval_string(Core.slurp(fileName));
+				p.evalString(Core.slurp(fileName));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
