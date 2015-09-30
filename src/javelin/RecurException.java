@@ -12,6 +12,6 @@ public class RecurException extends Exception {
 	
 	// the message shown when not caught
 	public String toString() {
-		return "recur is used outside a fn or loop";
+		return "recur is used outside a fn or a loop";
 	}
 }
