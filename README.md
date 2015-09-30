@@ -240,15 +240,14 @@ abc : java.lang.String
 ; KOSPI200 Ticker (C) 2015 KIM Taegyoon
 (import java.util)
 
-(def p (. regex.Pattern compile "KOSPI200.*</font>"))
+(def p (. regex.Pattern compile "KOSPI200.*>(.+)</font>"))
 (defn get-quote ()
   (def text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html"))
   (def m (. p matcher text))
-  (if (. m find) (. m group) ""))
+  (if (. m find) (. (. m group 1) replaceAll "&nbsp;" "") ""))
 
 (loop ()
-  (prn (new Date))
-  (prn (get-quote))
+  (prn (new Date) ":" (get-quote))
   (. Thread sleep 2000)
   (recur))
 ```
