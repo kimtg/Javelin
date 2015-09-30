@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.5";
+	public static final String VERSION = "0.5.1";
 
 	public Core() throws Exception {
 		set("true", true);
@@ -78,7 +78,7 @@ public class Core {
 		set("quasiquote", Special.QUASIQUOTE);
 		set("unquote", Special.UNQUOTE);
 		set("unquote-splicing", Special.UNQUOTE_SPLICING);
-		set("macroexpand", Special.MACROEXPAND);
+		set("macroexpand", new Builtin.macroexpand());
 
 		evalString("(defmacro defn (name & body) `(def ~name (fn ~@body)))" +
 				"(defmacro when (cond & body) `(if ~cond (do ~@body)))" +
@@ -189,25 +189,29 @@ public class Core {
 
 	static HashMap<String, Fn> macros = new HashMap<>();
 
-	private static Object macroexpand(Object n) throws Exception {
-		ArrayList<Object> expr = Core.arrayListValue(n);
-		if (macros.containsKey(expr.get(0).toString())) {
-			Fn func = macros.get(expr.get(0).toString());
+	static Object macroexpand(Object n) throws Exception {
+		if (n instanceof ArrayList) {
+			ArrayList<Object> expr = Core.arrayListValue(n);
+			if (macros.containsKey(expr.get(0).toString())) {
+				Fn func = macros.get(expr.get(0).toString());
 
-			// build arguments
-			ArrayList<Object> args = new ArrayList<Object>();
-			int len = expr.size();
-			for (int i = 1; i < len; i++) {
-				args.add(expr.get(i));
+				// build arguments
+				ArrayList<Object> args = new ArrayList<Object>();
+				int len = expr.size();
+				for (int i = 1; i < len; i++) {
+					args.add(expr.get(i));
+				}
+				Object r = apply(func, args, globalEnv);
+				return r;
+			} else {
+				ArrayList<Object> r = new ArrayList<Object>();
+				for (Object n2 : expr) {
+					r.add(preprocess(n2));
+				}
+				return r;
 			}
-			Object r = apply(func, args, globalEnv);
-			return r;
 		} else {
-			ArrayList<Object> r = new ArrayList<Object>();
-			for (Object n2 : expr) {
-				r.add(preprocess(n2));
-			}
-			return r;
+			return n;
 		}
 	}
 
@@ -217,10 +221,17 @@ public class Core {
 			if (expr.size() == 0)
 				return n;
 			Object func = preprocess(expr.get(0));
-			if (func instanceof Symbol && func.toString().equals("defmacro")) {
-				// (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
-				macros.put(expr.get(1).toString(), new Fn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
-				return null;
+			if (func instanceof Symbol) {
+				if (func.toString().equals("defmacro")) {
+					// (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
+					macros.put(expr.get(1).toString(), new Fn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
+					return null;
+				} else if (func.toString().equals("quote")) {
+					// skip quote
+					return n;
+				} else {
+					return macroexpand(n);
+				}
 			} else {
 				return macroexpand(n);
 			}
@@ -623,10 +634,6 @@ public class Core {
 				case UNQUOTE_SPLICING:
 				{
 					throw new Exception("Invalid syntax"); // unused outside a quasiquote
-				}
-				case MACROEXPAND: // (macroexpand X)
-				{
-					return preprocess(preprocessEval(expr.get(1), env));
 				}
 				default: {
 					System.err.println("Not implemented function: [" + func.toString() + "]");

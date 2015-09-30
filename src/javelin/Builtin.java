@@ -402,4 +402,11 @@ class Builtin {
 			return new javelin.Symbol(Core.toString(args.get(0)));
 		}
 	}
+
+	// (macroexpand X)
+	static class macroexpand implements IFn {
+		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
+			return Core.macroexpand(args.get(0));
+		}
+	}
 }
