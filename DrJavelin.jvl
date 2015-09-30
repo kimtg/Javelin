@@ -42,7 +42,7 @@
 		(. textf setText nil))))
 
 (def fc (new javax.swing.JFileChooser))
-; (. fc setFileFilter (new javax.swing.filechooser.FileNameExtensionFilter "Javelin file (*.jvl)" "jvl"))
+(. fc setFileFilter (new javax.swing.filechooser.FileNameExtensionFilter "Javelin file (*.jvl)" (. "jvl" split " ")))
 
 (def panel (new JPanel))
 
