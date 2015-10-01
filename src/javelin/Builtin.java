@@ -126,7 +126,15 @@ class Builtin {
 
 	static class mod implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			return Core.intValue(args.get(0)) % Core.intValue(args.get(1));
+			Object first = args.get(0);
+			Object second = args.get(1);
+			if (first instanceof Integer) {
+				return Core.intValue(first) % Core.intValue(second);
+			} else if (first instanceof Long) {
+				return Core.longValue(first) % Core.longValue(second);
+			} else {
+				return Core.doubleValue(first) % Core.doubleValue(second);
+			}
 		}
 	}
 
