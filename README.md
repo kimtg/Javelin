@@ -82,7 +82,9 @@ nil : nil
 > \a
 a : java.lang.Character
 ```
-Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \uNNNN as in Java. Octals are represented with \oNNN.
+* Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \uNNNN as in Java. Octals are represented with \oNNN.
+* nil Means 'nothing/no-value'- represents Java null and tests logical false
+* Booleans - true and false
 
 ### Special form ###
 ```
