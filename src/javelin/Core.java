@@ -20,13 +20,9 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.5.1";
+	public static final String VERSION = "0.5.2";
 
 	public Core() throws Exception {
-		set("true", true);
-		set("false", false);
-		set("nil", null);
-
 		set("+", new Builtin._plus());
 		set("-", new Builtin._minus());
 		set("*", new Builtin._star());
@@ -351,6 +347,8 @@ public class Core {
 								paramClass = Long.TYPE;
 							else if (param instanceof Boolean)
 								paramClass = Boolean.TYPE;
+							else if (param instanceof Character)
+								paramClass = Character.TYPE;
 							else {
 								if (param == null) paramClass = null;
 								else paramClass = param.getClass();
@@ -454,6 +452,8 @@ public class Core {
 								paramClass = Long.TYPE;
 							else if (param instanceof Boolean)
 								paramClass = Boolean.TYPE;
+							else if (param instanceof Character)
+								paramClass = Character.TYPE;
 							else {
 								if (param == null) paramClass = null;
 								else paramClass = param.getClass();

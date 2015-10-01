@@ -27,7 +27,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval false filter fn fold if import let list loop macroexpand map mod new nil nil? not not= or pr prn quasiquote quote read-line read-string recur reify set! slurp spit str symbol thread true type unquote unquote-splicing
+ * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval filter fn fold if import let list loop macroexpand map mod new nil? not not= or pr prn quasiquote quote read-line read-string recur reify set! slurp spit str symbol thread type unquote unquote-splicing
 Macros:
  defn when while
 ```
@@ -71,9 +71,18 @@ Literals:
 3.0 : java.lang.Double
 > 3e3
 3000.0 : java.lang.Double
+> true
+true : java.lang.Boolean
+> false
+false : java.lang.Boolean
+> nil
+nil : nil
 > "string"
 "string" : java.lang.String
+> \a
+a : java.lang.Character
 ```
+Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \uNNNN as in Java. Octals are represented with \oNNN.
 
 ### Special form ###
 ```

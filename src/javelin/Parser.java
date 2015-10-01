@@ -41,6 +41,29 @@ class Parser {
 		} else if (tok.equals("(")) { // list
 			pos++;
 			return parseList();
+		} else if (tok.charAt(0) == '\\') { // char
+			// Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \\uNNNN as in Java. Octals are represented with \\oNNN.			
+			if (tok.length() == 2) {
+				return tok.charAt(1);
+			} else {
+				switch (tok) {
+				case "\\newline": return '\n';
+				case "\\space": return ' ';
+				case "\\tab": return '\t';
+				case "\\formfeed": return '\f';
+				case "\\backspace": return '\b';
+				case "\\return": return '\r';
+				default:
+					if (tok.charAt(1) == 'u' && tok.length() == 6) { // Unicode: \\uNNNN
+						int codePoint = Integer.parseInt(tok.substring(2));
+						return Character.toChars(codePoint)[0];
+					} else if (tok.charAt(1) == 'o' && tok.length() == 5) { // Octal: \\oNNN
+						int codePoint = Integer.parseInt(tok.substring(2), 8);
+						return Character.toChars(codePoint)[0];
+					}
+					throw new RuntimeException("Unsupported character: " + tok);
+				}
+			}
 		} else if (Character.isDigit(tok.charAt(0)) || tok.charAt(0) == '-' && tok.length() >= 2
 				&& Character.isDigit(tok.charAt(1))) { // number
 			if (tok.indexOf('.') != -1 || tok.indexOf('e') != -1) { // double
@@ -51,6 +74,13 @@ class Parser {
 				return Integer.parseInt(tok);
 			}
 		} else { // symbol
+			// other literals
+			switch (tok) {
+			case "true": return true;
+			case "false": return false;
+			case "nil": return null;
+			}
+			// normal symbol
 			return new Symbol(tok);
 		}
 	}
