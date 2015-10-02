@@ -202,7 +202,7 @@ public class Core {
 					args.add(expr.get(i));
 				}
 				Object r = apply(func, args, globalEnv);
-				return r;
+				return macroexpand(r); // macroexpand again
 			} else {
 				ArrayList<Object> r = new ArrayList<Object>();
 				for (Object n2 : expr) {
