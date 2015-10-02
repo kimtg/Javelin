@@ -879,7 +879,7 @@ public class Core {
 		final String prefix = "()'`";
 		
 		while (true) {
-			String acc = ""; // accumulator
+			StringBuilder acc = new StringBuilder(); // accumulator
 			char c, p;
 			
 			// skip whitespaces
@@ -895,14 +895,14 @@ public class Core {
 				return "" + c;
 			} else if (p == '~') { // unquote
 				c = (char) r.read();
-				acc += c;
+				acc.append(c);
 				if (peek(r) == '@') { // unquote-splicing
 					c = (char) r.read();
-					acc += c;
+					acc.append(c);
 				}
-				return acc;
+				return acc.toString();
 			} else if (p == '"') { // string
-				acc += '"';
+				acc.append(p);
 				r.read();
 				while (!eof(r)) {
 					c = (char) r.read();
@@ -917,12 +917,12 @@ public class Core {
 							next = '\n';
 						else if (next == 't')
 							next = '\t';
-						acc += next;						
+						acc.append(next);
 					} else {
-						acc += c;
+						acc.append(c);
 					}
 				}
-				return acc;
+				return acc.toString();
 			} else if (p == ';') { // end-of-line comment
 				while (!eof(r) && peek(r) != '\n') {
 					r.read();
@@ -934,9 +934,9 @@ public class Core {
 					p = peek(r);
 					if (delim.indexOf(p) >= 0) break;
 					c = (char) r.read();
-					acc += c;
+					acc.append(c);
 				}
-				return acc;
+				return acc.toString();
 			}
 		}		
 	}
