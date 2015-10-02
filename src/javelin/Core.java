@@ -493,13 +493,12 @@ public class Core {
 					final Environment env2 = new Environment(env);
 					Thread t = new Thread() {
 						public void run() {
-							for (Object n : exprs) {
-								try {
+							try {
+								for (Object n : exprs) {
 									eval(n, env2);
-								} catch (Exception e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
 								}
+							} catch (Exception e) {
+								e.printStackTrace();
 							}
 						}
 					};
@@ -759,10 +758,6 @@ public class Core {
 
 	static void prompt() {
 		System.out.print("> ");
-	}
-
-	static void prompt2() {
-		System.out.print("  ");
 	}
 
 	// read-eval-print loop
