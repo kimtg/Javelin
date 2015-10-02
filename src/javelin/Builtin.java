@@ -3,6 +3,8 @@ package javelin;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 
 class Builtin {
@@ -269,7 +271,7 @@ class Builtin {
 
 	static class read_string implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			return Parser.parse(args.get(0).toString());
+			return Core.parse(new StringReader((String) args.get(0)));
 		}
 	}
 
@@ -415,6 +417,17 @@ class Builtin {
 	static class macroexpand implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
 			return Core.macroexpand(args.get(0));
+		}
+	}
+	
+	// (read [Reader])
+	static class read implements IFn {
+		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
+			switch (args.size()) {
+			case 0: return Core.parse(Core.defaultReader);
+			case 1: return Core.parse((Reader) args.get(1));
+			default: throw new IllegalArgumentException();
+			}
 		}
 	}
 }

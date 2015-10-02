@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -20,7 +22,8 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.5.2";
+	public static final String VERSION = "0.5.3";
+	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 
 	public Core() throws Exception {
 		set("+", new Builtin._plus());
@@ -75,6 +78,7 @@ public class Core {
 		set("unquote", Special.UNQUOTE);
 		set("unquote-splicing", Special.UNQUOTE_SPLICING);
 		set("macroexpand", new Builtin.macroexpand());
+		set("read", new Builtin.read());
 
 		evalString("(defmacro defn (name & body) `(def ~name (fn ~@body)))" +
 				"(defmacro when (cond & body) `(if ~cond (do ~@body)))" +
@@ -744,7 +748,8 @@ public class Core {
 
 	public Object evalString(String s) throws Exception {
 		s = "(" + s + "\n)";
-		ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(Parser.parse(s)));
+		//ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(Parser.parse(s)));
+		ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(parse(new StringReader(s))));
 		return evalAll(preprocessed);
 	}
 
@@ -762,29 +767,14 @@ public class Core {
 
 	// read-eval-print loop
 	public void repl() {
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String code = "";
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));;
 		while (true) {
 			try {
-				if (code.length() == 0)
-					prompt();
-				else
-					prompt2();
-				String line = br.readLine();
-				if (line == null) { // EOF
-					evalPrint(code);
-					break;
-				}
-				code += "\n" + line;
-				Tokenizer t = new Tokenizer(code);
-				t.tokenize();
-				if (t.unclosed <= 0) { // no unmatched parenthesis nor quotation
-					evalPrint(code);
-					code = "";
-				}
+				prompt();
+				Object expr = parse(br);
+				System.out.println(preprocessEval(expr, globalEnv));
 			} catch (Exception e) {
 				e.printStackTrace();
-				code = "";
 			}
 		}
 	}
@@ -867,5 +857,175 @@ public class Core {
 
 	public static Object preprocessEval(Object object, Environment env) throws Exception {
 		return eval(preprocess(object), env);
+	}
+	
+	public static char peek(Reader r) throws IOException {
+		r.mark(1);
+		char c = (char) r.read();
+		r.reset();
+		return c;
+	}
+	
+	public static boolean eof(Reader r) throws IOException {
+		r.mark(1);
+		int i = r.read();
+		r.reset();
+		return i < 0;
+	}
+	
+	public static String readToken(Reader r) throws IOException {
+		final String ws = " \t\r\n,";
+		final String delim = "() \t\r\n,;";
+		final String prefix = "()'`";
+		
+		while (true) {
+			String acc = ""; // accumulator
+			char c, p;
+			
+			// skip whitespaces
+			while (!eof(r)) {
+				p = peek(r);
+				if (ws.indexOf(p) < 0) break;
+				r.read();
+			}
+			
+			p = peek(r);
+			if (prefix.indexOf(p) >= 0) { // prefix
+				c = (char) r.read();
+				return "" + c;
+			} else if (p == '~') { // unquote
+				c = (char) r.read();
+				acc += c;
+				if (peek(r) == '@') { // unquote-splicing
+					c = (char) r.read();
+					acc += c;
+				}
+				return acc;
+			} else if (p == '"') { // string
+				acc += '"';
+				r.read();
+				while (!eof(r)) {
+					c = (char) r.read();
+					if (c == '"') {
+						break;
+					}
+					if (c == '\\') { // escape
+						char next = (char) r.read();
+						if (next == 'r')
+							next = '\r';
+						else if (next == 'n')
+							next = '\n';
+						else if (next == 't')
+							next = '\t';
+						acc += next;						
+					} else {
+						acc += c;
+					}
+				}
+				return acc;
+			} else if (p == ';') { // end-of-line comment
+				while (!eof(r) && peek(r) != '\n') {
+					r.read();
+				}
+				continue;
+			} else { // other
+				// read until delim
+				while (!eof(r)) {
+					p = peek(r);
+					if (delim.indexOf(p) >= 0) break;
+					c = (char) r.read();
+					acc += c;
+				}
+				return acc;
+			}
+		}		
+	}
+	
+	public static Object parse(Reader r) throws IOException {
+		return parse(r, readToken(r));
+	}
+	
+	// tok is provided if already read
+	public static Object parse(Reader r, String tok) throws IOException {		
+		if (tok.charAt(0) == '"') { // double-quoted string
+			return tok.substring(1);
+		} else if (tok.equals("'")) { // quote
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("quote"));
+			ret.add(parse(r));
+			return ret;
+		} else if (tok.equals("`")) { // quasiquote
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("quasiquote"));
+			ret.add(parse(r));
+			return ret;
+		} else if (tok.equals("~")) { // unquote
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("unquote"));
+			ret.add(parse(r));
+			return ret;
+		} else if (tok.equals("~@")) { // unquote-splicing
+			ArrayList<Object> ret = new ArrayList<Object>();
+			ret.add(new Symbol("unquote-splicing"));
+			ret.add(parse(r));
+			return ret;
+		} else if (tok.equals("(")) { // list
+			return parseList(r);
+		} else if (tok.charAt(0) == '\\') { // char
+			// Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \\uNNNN as in Java. Octals are represented with \\oNNN.			
+			if (tok.length() == 2) {
+				return tok.charAt(1);
+			} else {
+				switch (tok) {
+				case "\\newline": return '\n';
+				case "\\space": return ' ';
+				case "\\tab": return '\t';
+				case "\\formfeed": return '\f';
+				case "\\backspace": return '\b';
+				case "\\return": return '\r';
+				default:
+					if (tok.charAt(1) == 'u' && tok.length() == 6) { // Unicode: \\uNNNN
+						int codePoint = Integer.parseInt(tok.substring(2));
+						return Character.toChars(codePoint)[0];
+					} else if (tok.charAt(1) == 'o' && tok.length() == 5) { // Octal: \\oNNN
+						int codePoint = Integer.parseInt(tok.substring(2), 8);
+						return Character.toChars(codePoint)[0];
+					}
+					throw new RuntimeException("Unsupported character: " + tok);
+				}
+			}
+		} else if (Character.isDigit(tok.charAt(0)) || tok.charAt(0) == '-' && tok.length() >= 2
+				&& Character.isDigit(tok.charAt(1))) { // number
+			if (tok.indexOf('.') != -1 || tok.indexOf('e') != -1) { // double
+				return Double.parseDouble(tok);
+			} else if (tok.endsWith("L") || tok.endsWith("l")) { // long
+				return Long.parseLong(tok.substring(0, tok.length() - 1));
+			} else {
+				return Integer.parseInt(tok);
+			}
+		} else { // symbol
+			// other literals
+			switch (tok) {
+			case "true": return true;
+			case "false": return false;
+			case "nil": return null;
+			}
+			// normal symbol
+			return new Symbol(tok);
+		}
+	}
+
+	private static ArrayList<Object> parseList(Reader r) throws IOException {
+		ArrayList<Object> ret = new ArrayList<Object>();
+		while (!eof(r)) {
+			String tok = readToken(r);
+			if (tok.equals(")")) { // end of list
+				break;
+			} else {
+				Object o = parse(r, tok);
+				ret.add(o);
+			}
+		}
+		return ret;
 	}
 }
