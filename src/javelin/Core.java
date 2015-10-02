@@ -762,11 +762,10 @@ public class Core {
 
 	// read-eval-print loop
 	public void repl() {
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));;
 		while (true) {
 			try {
 				prompt();
-				Object expr = parse(br);
+				Object expr = parse(defaultReader);
 				System.out.println(preprocessEval(expr, globalEnv));
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -883,6 +882,7 @@ public class Core {
 				if (ws.indexOf(p) < 0) break;
 				r.read();
 			}
+			if (eof(r)) throw new RuntimeException("EOF while reading");
 			
 			p = peek(r);
 			if (prefix.indexOf(p) >= 0) { // prefix
