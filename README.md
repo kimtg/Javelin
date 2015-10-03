@@ -287,15 +287,15 @@ public class InteropTest {
 
         // Method 1: using class's field
         testField = pl;
-        j.eval_string("(def pl (.get InteropTest testField))");
-        j.eval_string("(. pl setLife 100)");
-        System.out.println(j.eval_string("(. pl getLife)").intValue());
+        j.evalString("(def pl (.get InteropTest testField))");
+        j.evalString("(. pl setLife 100)");
+        System.out.println(j.evalString("(. pl getLife)"));
 
         // Method 2: not using class's field, set variable to Java's local variable
-		j.set("p12", pl); // set
-		Player pl2 = j.get("pl2"); // get
-        j.eval_string("(. pl2 setLife 200)");
-        System.out.println(j.eval_string("(. pl2 getLife)").intValue());
+        j.set("p12", pl); // set
+        Player pl2 = j.get("pl2"); // get
+        j.evalString("(. pl2 setLife 200)");
+        System.out.println(j.evalString("(. pl2 getLife)"));
     }
 }
 
