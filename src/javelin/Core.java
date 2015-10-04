@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.5.3";
+	public static final String VERSION = "0.5.4";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 
 	public Core() throws Exception {
@@ -80,11 +80,16 @@ public class Core {
 		set("macroexpand", new Builtin.macroexpand());
 		set("read", new Builtin.read());
 
-		evalString("(defmacro defn (name & body) `(def ~name (fn ~@body)))" +
-				"(defmacro when (cond & body) `(if ~cond (do ~@body)))" +
-				"(defn nil? (x) (= nil x))" +
-				"(defmacro while (test & body) `(loop () (when ~test ~@body (recur))))" +
-				"(import java.lang)"
+		evalString(
+				"(import java.lang)\n" +
+				"(defmacro defn (name & body) `(def ~name (fn ~@body)))\n" +
+				"(defmacro when (cond & body) `(if ~cond (do ~@body)))\n" +
+				"(defn nil? (x) (= nil x))\n" +
+				"(defmacro while (test & body) `(loop () (when ~test ~@body (recur))))\n" +
+				"(def gensym\n"+
+				"  (let (gs-counter 0)\n" +
+				"    (fn ()\n" +
+				"      (symbol (str \"G__\" (set! gs-counter (+ gs-counter 1)))))))"
 				);
 	}
 
