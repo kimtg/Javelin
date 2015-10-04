@@ -766,7 +766,7 @@ public class Core {
 			try {
 				prompt();
 				Object expr = parse(defaultReader);
-				System.out.println(preprocessEval(expr, globalEnv));
+				System.out.println(strWithType(preprocessEval(expr, globalEnv)));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
