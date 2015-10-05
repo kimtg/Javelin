@@ -27,9 +27,9 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Special forms:
- . .get .set! and def do doseq fn if import let loop new or quasiquote quote recur reify set! thread unquote unquote-splicing
+ . .get .set! and def do doseq fn if import let loop new or quasiquote quote recur reify set! thread
 Functions:
- * + - . .get .set! / < <= = == > >= and apply def do doseq eval filter fn fold gensym if import let list loop macroexpand map mod new nil? not not= or pr prn quasiquote quote read read-line read-string recur reify set! slurp spit str symbol thread type unquote unquote-splicing
+ * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr prn read read-line read-string slurp spit str symbol type
 Macros:
  defn when while
 ```

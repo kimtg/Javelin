@@ -25,28 +25,26 @@ import java.util.TreeSet;
 public class Core {
 	public static final String VERSION = "0.6";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
-	static final Symbol sym_SET_E = new Symbol("set!");
-	static final Symbol sym_DEF = new Symbol("def");
-	static final Symbol sym_AND = new Symbol("and");
-	static final Symbol sym_OR = new Symbol("or");
-	static final Symbol sym_IF = new Symbol("if");
-	static final Symbol sym_QUOTE = new Symbol("quote");
-	static final Symbol sym_FN = new Symbol("fn");
-	static final Symbol sym_DO = new Symbol("do");
-	static final Symbol sym__DOT = new Symbol(".");
-	static final Symbol sym__DOTGET = new Symbol(".get");
-	static final Symbol sym__DOTSET_E = new Symbol(".set!");
-	static final Symbol sym_NEW = new Symbol("new");
-	static final Symbol sym_THREAD = new Symbol("thread");
-	static final Symbol sym_DOSEQ = new Symbol("doseq");
-	static final Symbol sym_LET = new Symbol("let");
-	static final Symbol sym_IMPORT = new Symbol("import");
-	static final Symbol sym_REIFY = new Symbol("reify");
-	static final Symbol sym_RECUR = new Symbol("recur");
-	static final Symbol sym_LOOP = new Symbol("loop");
-	static final Symbol sym_QUASIQUOTE = new Symbol("quasiquote");
-	static final Symbol sym_UNQUOTE = new Symbol("unquote");
-	static final Symbol sym_UNQUOTE_SPLICING = new Symbol("unquote-splicing");
+	static final Symbol sym_set_e = new Symbol("set!");
+	static final Symbol sym_def = new Symbol("def");
+	static final Symbol sym_and = new Symbol("and");
+	static final Symbol sym_or = new Symbol("or");
+	static final Symbol sym_if = new Symbol("if");
+	static final Symbol sym_quote = new Symbol("quote");
+	static final Symbol sym_fn = new Symbol("fn");
+	static final Symbol sym_do = new Symbol("do");
+	static final Symbol sym__dot = new Symbol(".");
+	static final Symbol sym__dotget = new Symbol(".get");
+	static final Symbol sym__dotset_e = new Symbol(".set!");
+	static final Symbol sym_new = new Symbol("new");
+	static final Symbol sym_thread = new Symbol("thread");
+	static final Symbol sym_doseq = new Symbol("doseq");
+	static final Symbol sym_let = new Symbol("let");
+	static final Symbol sym_import = new Symbol("import");
+	static final Symbol sym_reify = new Symbol("reify");
+	static final Symbol sym_recur = new Symbol("recur");
+	static final Symbol sym_loop = new Symbol("loop");
+	static final Symbol sym_quasiquote = new Symbol("quasiquote");
 
 	public Core() throws Exception {
 		set("+", new Builtin._plus());
@@ -183,24 +181,25 @@ public class Core {
 	public static void printLogo() {
 		System.out.println("Javelin " + VERSION);
 		System.out.println("Special forms:");
-		ArrayList<String> r = new ArrayList<String>();
+		ArrayList<String> fields = new ArrayList<String>();
 		for (Field f : Core.class.getDeclaredFields()) {
 			if (f.getType().equals(Symbol.class)) {
 				try {
-					r.add(f.get(null).toString());
+					fields.add(f.get(null).toString());
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		}
-		printCollection(r);
+		printCollection(fields);
 
+		ArrayList<String> functions = new ArrayList<String>();
 		System.out.println("Functions:");
 		for (int x : globalEnv.env.keySet()) {
-			r.add(Symbol.symname.get(x));
+			functions.add(Symbol.symname.get(x));
 		}
-		printCollection(r);
+		printCollection(functions);
 
 		System.out.println("Macros:");
 		printCollection(macros.keySet());
@@ -271,7 +270,7 @@ public class Core {
 			Object e0 = expr.get(0);
 			if (e0 instanceof Symbol) {
 				final int code = ((Symbol) e0).code;
-				if (code == sym_SET_E.code) { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
+				if (code == sym_set_e.code) { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
 					Object value = null;
 					int len = expr.size();
 					for (int i = 1; i < len; i += 2) {
@@ -280,7 +279,7 @@ public class Core {
 					}
 					return value;
 				}
-				else if (code == sym_DEF.code) { // (def SYMBOL VALUE ...) ; set in the current
+				else if (code == sym_def.code) { // (def SYMBOL VALUE ...) ; set in the current
 							// environment
 					Object ret = null;
 					int len = expr.size();
@@ -290,7 +289,7 @@ public class Core {
 					}
 					return ret;
 				}
-				else if (code == sym_AND.code) { // (and X ...) short-circuit
+				else if (code == sym_and.code) { // (and X ...) short-circuit
 					for (int i = 1; i < expr.size(); i++) {
 						if (!Core.booleanValue(eval(expr.get(i), env))) {
 							return false;
@@ -298,7 +297,7 @@ public class Core {
 					}
 					return true;
 				}
-				else if (code == sym_OR.code) { // (or X ...) short-circuit
+				else if (code == sym_or.code) { // (or X ...) short-circuit
 					for (int i = 1; i < expr.size(); i++) {
 						if (Core.booleanValue(eval(expr.get(i), env))) {
 							return true;
@@ -306,7 +305,7 @@ public class Core {
 					}
 					return false;
 				}
-				else if (code == sym_IF.code) { // (if CONDITION THEN_EXPR [ELSE_EXPR])
+				else if (code == sym_if.code) { // (if CONDITION THEN_EXPR [ELSE_EXPR])
 					Object cond = expr.get(1);
 					if (Core.booleanValue(eval(cond, env))) {
 						return eval(expr.get(2), env);
@@ -316,10 +315,10 @@ public class Core {
 						return eval(expr.get(3), env);
 					}
 				}
-				else if (code == sym_QUOTE.code) { // (quote X)
+				else if (code == sym_quote.code) { // (quote X)
 					return expr.get(1);
 				}
-				else if (code == sym_FN.code) {
+				else if (code == sym_fn.code) {
 					// anonymous function. lexical scoping
 					// (fn (ARGUMENT ...) BODY ...)
 					ArrayList<Object> r = new ArrayList<Object>();
@@ -328,7 +327,7 @@ public class Core {
 					}
 					return new Fn(r, env);
 				}
-				else if (code == sym_DO.code) { // (do X ...)
+				else if (code == sym_do.code) { // (do X ...)
 					int last = expr.size() - 1;
 					if (last <= 0)
 						return null;
@@ -337,7 +336,7 @@ public class Core {
 					}
 					return eval(expr.get(last), env);
 				}
-				else if (code == sym__DOT.code) {
+				else if (code == sym__dot.code) {
 					// Java interoperability
 					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
 					try {
@@ -401,7 +400,7 @@ public class Core {
 						return null;
 					}
 				}
-				else if (code == sym__DOTGET.code) {
+				else if (code == sym__dotget.code) {
 					// Java interoperability
 					// (.get CLASS-OR-OBJECT FIELD) ; get Java field
 					try {
@@ -426,7 +425,7 @@ public class Core {
 						return null;
 					}
 				}
-				else if (code == sym__DOTSET_E.code) {
+				else if (code == sym__dotset_e.code) {
 					// Java interoperability
 					// (.set! CLASS-OR-OBJECT FIELD VALUE) ; set Java field
 					try {
@@ -453,7 +452,7 @@ public class Core {
 						return null;
 					}
 				}
-				else if (code == sym_NEW.code) {
+				else if (code == sym_new.code) {
 					// Java interoperability
 					// (new CLASS ARG ...) ; create new Java object
 					try {
@@ -506,7 +505,7 @@ public class Core {
 						return null;
 					}
 				}
-				else if (code == sym_THREAD.code) { // (thread EXPR ...): Creates new thread and
+				else if (code == sym_thread.code) { // (thread EXPR ...): Creates new thread and
 								// starts it.
 					final ArrayList<Object> exprs = new ArrayList<Object>(expr.subList(1, expr.size()));
 					final Environment env2 = new Environment(env);
@@ -524,7 +523,7 @@ public class Core {
 					t.start();
 					return t;
 				}
-				else if (code == sym_DOSEQ.code) // (doseq (VAR SEQ) EXPR ...)
+				else if (code == sym_doseq.code) // (doseq (VAR SEQ) EXPR ...)
 				{
 					Environment env2 = new Environment(env);
 					int varCode = Core.symbolValue(Core.arrayListValue(expr.get(1)).get(0)).code;
@@ -539,7 +538,7 @@ public class Core {
 					}
 					return null;
 				}
-				else if (code == sym_LET.code) // (let (VAR VALUE ...) BODY ...)
+				else if (code == sym_let.code) // (let (VAR VALUE ...) BODY ...)
 				{
 					Environment env2 = new Environment(env);
 					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
@@ -552,7 +551,7 @@ public class Core {
 					}
 					return ret;
 				}
-				else if (code == sym_IMPORT.code) // (import CLASS-PREFIX ...)
+				else if (code == sym_import.code) // (import CLASS-PREFIX ...)
 				{
 					for (int i = 1; i < expr.size(); i++) {
 						String s = expr.get(i).toString();
@@ -560,7 +559,7 @@ public class Core {
 					}
 					return imports;
 				}
-				else if (code == sym_REIFY.code) // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
+				else if (code == sym_reify.code) // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
 				{
 // Note that the first parameter must be supplied to
 // correspond to the target object ('this' in Java parlance). Thus
@@ -610,7 +609,7 @@ public class Core {
 					Object ret = Proxy.newProxyInstance(cl, new Class[] {cls}, handler);
 					return ret;
 				}
-				else if (code == sym_RECUR.code) // (recur ARG ...)
+				else if (code == sym_recur.code) // (recur ARG ...)
 				{
 					ArrayList<Object> args = new ArrayList<Object>();
 					for (int i = 1; i < expr.size(); i++) {
@@ -618,7 +617,7 @@ public class Core {
 					}
 					throw new RecurException(args);
 				}
-				else if (code == sym_LOOP.code) // (loop (VAR VALUE ...) BODY ...)
+				else if (code == sym_loop.code) // (loop (VAR VALUE ...) BODY ...)
 				{
 					// separate formal and actual parameters
 					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
@@ -648,13 +647,9 @@ public class Core {
 						return ret;
 					}
 				}
-				else if (code == sym_QUASIQUOTE.code) // (quasiquote S-EXPRESSION)
+				else if (code == sym_quasiquote.code) // (quasiquote S-EXPRESSION)
 				{
 					return quasiquote(expr.get(1), env);
-				}
-				else if (code == sym_UNQUOTE.code || code == sym_UNQUOTE_SPLICING.code)
-				{
-					throw new Exception("Invalid syntax"); // unused outside a quasiquote
 				}
 			}
 			// evaluate arguments
