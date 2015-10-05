@@ -786,7 +786,7 @@ public class Core {
 			InputStream is = url.openStream();
 			try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
 				String line;
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				while ((line = br.readLine()) != null) {
 					sb.append(line);
 				}
