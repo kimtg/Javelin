@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -22,8 +23,30 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.5.4";
+	public static final String VERSION = "0.6";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
+	static final Symbol sym_SET_E = new Symbol("set!");
+	static final Symbol sym_DEF = new Symbol("def");
+	static final Symbol sym_AND = new Symbol("and");
+	static final Symbol sym_OR = new Symbol("or");
+	static final Symbol sym_IF = new Symbol("if");
+	static final Symbol sym_QUOTE = new Symbol("quote");
+	static final Symbol sym_FN = new Symbol("fn");
+	static final Symbol sym_DO = new Symbol("do");
+	static final Symbol sym__DOT = new Symbol(".");
+	static final Symbol sym__DOTGET = new Symbol(".get");
+	static final Symbol sym__DOTSET_E = new Symbol(".set!");
+	static final Symbol sym_NEW = new Symbol("new");
+	static final Symbol sym_THREAD = new Symbol("thread");
+	static final Symbol sym_DOSEQ = new Symbol("doseq");
+	static final Symbol sym_LET = new Symbol("let");
+	static final Symbol sym_IMPORT = new Symbol("import");
+	static final Symbol sym_REIFY = new Symbol("reify");
+	static final Symbol sym_RECUR = new Symbol("recur");
+	static final Symbol sym_LOOP = new Symbol("loop");
+	static final Symbol sym_QUASIQUOTE = new Symbol("quasiquote");
+	static final Symbol sym_UNQUOTE = new Symbol("unquote");
+	static final Symbol sym_UNQUOTE_SPLICING = new Symbol("unquote-splicing");
 
 	public Core() throws Exception {
 		set("+", new Builtin._plus());
@@ -38,45 +61,22 @@ public class Core {
 		set(">", new Builtin._gt());
 		set("<=", new Builtin._lt_eq());
 		set(">=", new Builtin._gt_eq());
-		set("and", Special.AND);
-		set("or", Special.OR);
 		set("not", new Builtin.not());
-		set("if", Special.IF);
 		set("read-string", new Builtin.read_string());
 		set("type", new Builtin.type());
 		set("eval", new Builtin.eval());
-		set("quote", Special.QUOTE);
-		set("fn", Special.FN);
 		set("list", new Builtin.list());
 		set("apply", new Builtin.apply());
 		set("fold", new Builtin.fold());
 		set("map", new Builtin.map());
 		set("filter", new Builtin.filter());
-		set("do", Special.DO);
-		set(".", Special._DOT);
-		set(".get", Special._DOTGET);
-		set(".set!", Special._DOTSET_E);
-		set("new", Special.NEW);
-		set("set!", Special.SET_E);
 		set("pr", new Builtin.pr());
 		set("prn", new Builtin.prn());
-		set("defmacro", Special.DEFMACRO);
 		set("read-line", new Builtin.read_line());
 		set("slurp", new Builtin.slurp());
 		set("spit", new Builtin.spit());
-		set("thread", Special.THREAD);
-		set("def", Special.DEF);
-		set("doseq", Special.DOSEQ);
 		set("str", new Builtin.str());
-		set("let", Special.LET);
 		set("symbol", new Builtin.symbol());
-		set("import", Special.IMPORT);
-		set("reify", Special.REIFY);
-		set("recur", Special.RECUR);
-		set("loop", Special.LOOP);
-		set("quasiquote", Special.QUASIQUOTE);
-		set("unquote", Special.UNQUOTE);
-		set("unquote-splicing", Special.UNQUOTE_SPLICING);
 		set("macroexpand", new Builtin.macroexpand());
 		set("read", new Builtin.read());
 
@@ -182,12 +182,26 @@ public class Core {
 
 	public static void printLogo() {
 		System.out.println("Javelin " + VERSION);
-		System.out.println("Predefined Symbols:");
-		ArrayList<String> r = new ArrayList<String>(globalEnv.env.keySet().size());
+		System.out.println("Special forms:");
+		ArrayList<String> r = new ArrayList<String>();
+		for (Field f : Core.class.getDeclaredFields()) {
+			if (f.getType().equals(Symbol.class)) {
+				try {
+					r.add(f.get(null).toString());
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		printCollection(r);
+
+		System.out.println("Functions:");
 		for (int x : globalEnv.env.keySet()) {
 			r.add(Symbol.symname.get(x));
 		}
 		printCollection(r);
+
 		System.out.println("Macros:");
 		printCollection(macros.keySet());
 	}
@@ -254,10 +268,10 @@ public class Core {
 			ArrayList<Object> expr = Core.arrayListValue(n);
 			if (expr.size() == 0)
 				return null;
-			Object func = eval(expr.get(0), env);
-			if (func instanceof Special) {
-				switch ((Special) func) {
-				case SET_E: { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
+			Object e0 = expr.get(0);
+			if (e0 instanceof Symbol) {
+				final int code = ((Symbol) e0).code;
+				if (code == sym_SET_E.code) { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
 					Object value = null;
 					int len = expr.size();
 					for (int i = 1; i < len; i += 2) {
@@ -266,7 +280,7 @@ public class Core {
 					}
 					return value;
 				}
-				case DEF: { // (def SYMBOL VALUE ...) ; set in the current
+				else if (code == sym_DEF.code) { // (def SYMBOL VALUE ...) ; set in the current
 							// environment
 					Object ret = null;
 					int len = expr.size();
@@ -276,7 +290,7 @@ public class Core {
 					}
 					return ret;
 				}
-				case AND: { // (and X ...) short-circuit
+				else if (code == sym_AND.code) { // (and X ...) short-circuit
 					for (int i = 1; i < expr.size(); i++) {
 						if (!Core.booleanValue(eval(expr.get(i), env))) {
 							return false;
@@ -284,7 +298,7 @@ public class Core {
 					}
 					return true;
 				}
-				case OR: { // (or X ...) short-circuit
+				else if (code == sym_OR.code) { // (or X ...) short-circuit
 					for (int i = 1; i < expr.size(); i++) {
 						if (Core.booleanValue(eval(expr.get(i), env))) {
 							return true;
@@ -292,7 +306,7 @@ public class Core {
 					}
 					return false;
 				}
-				case IF: { // (if CONDITION THEN_EXPR [ELSE_EXPR])
+				else if (code == sym_IF.code) { // (if CONDITION THEN_EXPR [ELSE_EXPR])
 					Object cond = expr.get(1);
 					if (Core.booleanValue(eval(cond, env))) {
 						return eval(expr.get(2), env);
@@ -302,10 +316,10 @@ public class Core {
 						return eval(expr.get(3), env);
 					}
 				}
-				case QUOTE: { // (quote X)
+				else if (code == sym_QUOTE.code) { // (quote X)
 					return expr.get(1);
 				}
-				case FN: {
+				else if (code == sym_FN.code) {
 					// anonymous function. lexical scoping
 					// (fn (ARGUMENT ...) BODY ...)
 					ArrayList<Object> r = new ArrayList<Object>();
@@ -314,7 +328,7 @@ public class Core {
 					}
 					return new Fn(r, env);
 				}
-				case DO: { // (do X ...)
+				else if (code == sym_DO.code) { // (do X ...)
 					int last = expr.size() - 1;
 					if (last <= 0)
 						return null;
@@ -323,7 +337,7 @@ public class Core {
 					}
 					return eval(expr.get(last), env);
 				}
-				case _DOT: {
+				else if (code == sym__DOT.code) {
 					// Java interoperability
 					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
 					try {
@@ -387,7 +401,7 @@ public class Core {
 						return null;
 					}
 				}
-				case _DOTGET: {
+				else if (code == sym__DOTGET.code) {
 					// Java interoperability
 					// (.get CLASS-OR-OBJECT FIELD) ; get Java field
 					try {
@@ -412,7 +426,7 @@ public class Core {
 						return null;
 					}
 				}
-				case _DOTSET_E: {
+				else if (code == sym__DOTSET_E.code) {
 					// Java interoperability
 					// (.set! CLASS-OR-OBJECT FIELD VALUE) ; set Java field
 					try {
@@ -439,7 +453,7 @@ public class Core {
 						return null;
 					}
 				}
-				case NEW: {
+				else if (code == sym_NEW.code) {
 					// Java interoperability
 					// (new CLASS ARG ...) ; create new Java object
 					try {
@@ -492,7 +506,7 @@ public class Core {
 						return null;
 					}
 				}
-				case THREAD: { // (thread EXPR ...): Creates new thread and
+				else if (code == sym_THREAD.code) { // (thread EXPR ...): Creates new thread and
 								// starts it.
 					final ArrayList<Object> exprs = new ArrayList<Object>(expr.subList(1, expr.size()));
 					final Environment env2 = new Environment(env);
@@ -510,7 +524,7 @@ public class Core {
 					t.start();
 					return t;
 				}
-				case DOSEQ: // (doseq (VAR SEQ) EXPR ...)
+				else if (code == sym_DOSEQ.code) // (doseq (VAR SEQ) EXPR ...)
 				{
 					Environment env2 = new Environment(env);
 					int varCode = Core.symbolValue(Core.arrayListValue(expr.get(1)).get(0)).code;
@@ -525,7 +539,7 @@ public class Core {
 					}
 					return null;
 				}
-				case LET: // (let (VAR VALUE ...) BODY ...)
+				else if (code == sym_LET.code) // (let (VAR VALUE ...) BODY ...)
 				{
 					Environment env2 = new Environment(env);
 					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
@@ -538,7 +552,7 @@ public class Core {
 					}
 					return ret;
 				}
-				case IMPORT: // (import CLASS-PREFIX ...)
+				else if (code == sym_IMPORT.code) // (import CLASS-PREFIX ...)
 				{
 					for (int i = 1; i < expr.size(); i++) {
 						String s = expr.get(i).toString();
@@ -546,7 +560,7 @@ public class Core {
 					}
 					return imports;
 				}
-				case REIFY: // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
+				else if (code == sym_REIFY.code) // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
 				{
 // Note that the first parameter must be supplied to
 // correspond to the target object ('this' in Java parlance). Thus
@@ -596,7 +610,7 @@ public class Core {
 					Object ret = Proxy.newProxyInstance(cl, new Class[] {cls}, handler);
 					return ret;
 				}
-				case RECUR: // (recur ARG ...)
+				else if (code == sym_RECUR.code) // (recur ARG ...)
 				{
 					ArrayList<Object> args = new ArrayList<Object>();
 					for (int i = 1; i < expr.size(); i++) {
@@ -604,7 +618,7 @@ public class Core {
 					}
 					throw new RecurException(args);
 				}
-				case LOOP: // (loop (VAR VALUE ...) BODY ...)
+				else if (code == sym_LOOP.code) // (loop (VAR VALUE ...) BODY ...)
 				{
 					// separate formal and actual parameters
 					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
@@ -634,29 +648,23 @@ public class Core {
 						return ret;
 					}
 				}
-				case QUASIQUOTE: // (quasiquote S-EXPRESSION)
+				else if (code == sym_QUASIQUOTE.code) // (quasiquote S-EXPRESSION)
 				{
 					return quasiquote(expr.get(1), env);
 				}
-				case UNQUOTE:
-				case UNQUOTE_SPLICING:
+				else if (code == sym_UNQUOTE.code || code == sym_UNQUOTE_SPLICING.code)
 				{
 					throw new Exception("Invalid syntax"); // unused outside a quasiquote
 				}
-				default: {
-					System.err.println("Not implemented function: [" + func.toString() + "]");
-					return null;
-				}
-				} // end switch(found)
-			} else {
-				// evaluate arguments
-				ArrayList<Object> args = new ArrayList<Object>();
-				int len = expr.size();
-				for (int i = 1; i < len; i++) {
-					args.add(eval(expr.get(i), env));
-				}
-				return apply(func, args, env);
 			}
+			// evaluate arguments
+			Object func = eval(expr.get(0), env);
+			ArrayList<Object> args = new ArrayList<Object>();
+			int len = expr.size();
+			for (int i = 1; i < len; i++) {
+				args.add(eval(expr.get(i), env));
+			}
+			return apply(func, args, env);
 		} else {
 			// return n.clone();
 			return n;
@@ -857,30 +865,30 @@ public class Core {
 	public static Object preprocessEval(Object object, Environment env) throws Exception {
 		return eval(preprocess(object), env);
 	}
-	
+
 	public static char peek(Reader r) throws IOException {
 		r.mark(1);
 		char c = (char) r.read();
 		r.reset();
 		return c;
 	}
-	
+
 	public static boolean eof(Reader r) throws IOException {
 		r.mark(1);
 		int i = r.read();
 		r.reset();
 		return i < 0;
 	}
-	
+
 	public static String readToken(Reader r) throws IOException {
 		final String ws = " \t\r\n,";
 		final String delim = "() \t\r\n,;";
 		final String prefix = "()'`";
-		
+
 		while (true) {
 			StringBuilder acc = new StringBuilder(); // accumulator
 			char c, p;
-			
+
 			// skip whitespaces
 			while (!eof(r)) {
 				p = peek(r);
@@ -888,7 +896,7 @@ public class Core {
 				r.read();
 			}
 			if (eof(r)) throw new RuntimeException("EOF while reading");
-			
+
 			p = peek(r);
 			if (prefix.indexOf(p) >= 0) { // prefix
 				c = (char) r.read();
@@ -938,15 +946,15 @@ public class Core {
 				}
 				return acc.toString();
 			}
-		}		
+		}
 	}
-	
+
 	public static Object parse(Reader r) throws IOException {
 		return parse(r, readToken(r));
 	}
-	
+
 	// tok is provided if already read
-	public static Object parse(Reader r, String tok) throws IOException {		
+	public static Object parse(Reader r, String tok) throws IOException {
 		if (tok.charAt(0) == '"') { // double-quoted string
 			return tok.substring(1);
 		} else if (tok.equals("'")) { // quote
@@ -972,7 +980,7 @@ public class Core {
 		} else if (tok.equals("(")) { // list
 			return parseList(r);
 		} else if (tok.charAt(0) == '\\') { // char
-			// Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \\uNNNN as in Java. Octals are represented with \\oNNN.			
+			// Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \\uNNNN as in Java. Octals are represented with \\oNNN.
 			if (tok.length() == 2) {
 				return tok.charAt(1);
 			} else {

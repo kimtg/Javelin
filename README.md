@@ -26,8 +26,10 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 
 ## Reference ##
 ```
-Predefined Symbols:
- * + - . .get .set! / < <= = == > >= and apply def defmacro do doseq eval filter fn fold gensym if import let list loop macroexpand map mod new nil? not not= or pr prn quasiquote quote read read-line read-string recur reify set! slurp spit str symbol thread type unquote unquote-splicing
+Special forms:
+ . .get .set! and def do doseq fn if import let loop new or quasiquote quote recur reify set! thread unquote unquote-splicing
+Functions:
+ * + - . .get .set! / < <= = == > >= and apply def do doseq eval filter fn fold gensym if import let list loop macroexpand map mod new nil? not not= or pr prn quasiquote quote read read-line read-string recur reify set! slurp spit str symbol thread type unquote unquote-splicing
 Macros:
  defn when while
 ```
