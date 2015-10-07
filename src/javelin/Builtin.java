@@ -209,57 +209,45 @@ class Builtin {
 
 	static class _lt implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			Object first = args.get(0);
-			Object second = args.get(1);
-			if (first instanceof Integer) {
-				return Core.intValue(first) < Core.intValue(second);
-			} else if (first instanceof Long) {
-				return Core.longValue(first) < Core.longValue(second);
-			} else {
-				return Core.doubleValue(first) < Core.doubleValue(second);
+			for (int i = 0; i < args.size() - 1; i++) {
+				Object first = args.get(i);
+				Object second = args.get(i + 1);
+				if (!(Core.doubleValue(first) < Core.doubleValue(second))) return false;
 			}
+			return true;
 		}
 	}
 
 	static class _gt implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			Object first = args.get(0);
-			Object second = args.get(1);
-			if (first instanceof Integer) {
-				return Core.intValue(first) > Core.intValue(second);
-			} else if (first instanceof Long) {
-				return Core.longValue(first) > Core.longValue(second);
-			} else {
-				return Core.doubleValue(first) > Core.doubleValue(second);
+			for (int i = 0; i < args.size() - 1; i++) {
+				Object first = args.get(i);
+				Object second = args.get(i + 1);
+				if (!(Core.doubleValue(first) > Core.doubleValue(second))) return false;
 			}
+			return true;
 		}
 	}
 
 	static class _lt_eq implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			Object first = args.get(0);
-			Object second = args.get(1);
-			if (first instanceof Integer) {
-				return Core.intValue(first) <= Core.intValue(second);
-			} else if (first instanceof Long) {
-				return Core.longValue(first) <= Core.longValue(second);
-			} else {
-				return Core.doubleValue(first) <= Core.doubleValue(second);
+			for (int i = 0; i < args.size() - 1; i++) {
+				Object first = args.get(i);
+				Object second = args.get(i + 1);
+				if (!(Core.doubleValue(first) <= Core.doubleValue(second))) return false;
 			}
+			return true;
 		}
 	}
 
 	static class _gt_eq implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
-			Object first = args.get(0);
-			Object second = args.get(1);
-			if (first instanceof Integer) {
-				return Core.intValue(first) >= Core.intValue(second);
-			} else if (first instanceof Long) {
-				return Core.longValue(first) >= Core.longValue(second);
-			} else {
-				return Core.doubleValue(first) >= Core.doubleValue(second);
+			for (int i = 0; i < args.size() - 1; i++) {
+				Object first = args.get(i);
+				Object second = args.get(i + 1);
+				if (!(Core.doubleValue(first) >= Core.doubleValue(second))) return false;
 			}
+			return true;
 		}
 	}
 

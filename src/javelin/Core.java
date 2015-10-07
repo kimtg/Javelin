@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.6.2";
+	public static final String VERSION = "0.6.3";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -90,7 +90,10 @@ public class Core {
 				"(def gensym\n"+
 				"  (let (gs-counter 0)\n" +
 				"    (fn ()\n" +
-				"      (symbol (str \"G__\" (set! gs-counter (+ gs-counter 1)))))))"
+				"      (symbol (str \"G__\" (set! gs-counter (+ gs-counter 1)))))))\n" +
+				"(defmacro dotimes (binding & body)\n" +
+				"  (let (g (gensym), var (binding 0), limit (binding 1))\n" +
+				"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n"
 				);
 	}
 
