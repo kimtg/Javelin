@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.6.1";
+	public static final String VERSION = "0.6.2";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -159,9 +160,11 @@ public class Core {
 		if (func instanceof IFn) {
 			return ((IFn) func).invoke(args, env);
 		} else {
+			// implicit indexing
 			if (func instanceof List) {
-				// implicit indexing
 				return ((List<Object>) func).get(Core.intValue(args.get(0)));
+			} else if (func.getClass().isArray()) {
+				return Array.get(func, Core.intValue(args.get(0)));
 			}
 			else {
 				System.err.println("Unknown function: [" + func.toString() + "]");

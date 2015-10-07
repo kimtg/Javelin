@@ -176,6 +176,14 @@ Exception in thread "main" java.lang.StackOverflowError
 3 : java.lang.Integer
 ```
 
+### Array ###
+```
+> (. java.lang.reflect.Array get (. "a b" split " ") 1)
+"b" : java.lang.String
+> ((. "a b" split " ") 1) ; implicit indexing
+"b" : java.lang.String
+```
+
 ### Macro ###
 Macro is non-hygienic.
 
