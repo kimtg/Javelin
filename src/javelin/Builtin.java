@@ -372,11 +372,13 @@ class Builtin {
 		}
 	}
 
+	// (slurp filename [encoding]) default encoding: UTF-8
 	static class slurp implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
 			String filename = Core.toString(args.get(0));
+			String charset = args.size() >= 2 ? args.get(1).toString() : "UTF-8";
 			try {
-				return Core.slurp(filename);
+				return Core.slurp(filename, charset);
 			} catch (IOException e) {
 				return null;
 			}

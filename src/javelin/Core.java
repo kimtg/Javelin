@@ -2,6 +2,7 @@ package javelin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,7 +25,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.6";
+	public static final String VERSION = "0.6.1";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -782,22 +784,24 @@ public class Core {
 	}
 
 	// extracts characters from URL or filename
-	public static String slurp(String urlOrFileName) throws IOException {
+	public static String slurp(String urlOrFileName, String charsetName) throws IOException {		
+		InputStream is = null;
 		try {
 			// try URL
 			URL url = new URL(urlOrFileName);
-			InputStream is = url.openStream();
-			try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-				String line;
-				StringBuilder sb = new StringBuilder();
-				while ((line = br.readLine()) != null) {
-					sb.append(line);
-				}
-				return sb.toString();
-			}
+			is = url.openStream();
 		} catch (MalformedURLException e) {
-			return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(urlOrFileName)));
+			is = new FileInputStream(urlOrFileName);
 		}
+		BufferedReader br = new BufferedReader(new InputStreamReader(is, Charset.forName(charsetName)));
+		StringBuilder sb = new StringBuilder();
+		while (true) {
+			int c = br.read();
+			if (c < 0) break;
+			sb.append((char) c);
+		}
+		br.close();
+		return sb.toString();
 	}
 
 	// Opposite of slurp. Writes str to filename.
@@ -850,7 +854,7 @@ public class Core {
 		for (String fileName : args) {
 			Core p = new Core();
 			try {
-				p.evalString(Core.slurp(fileName));
+				p.evalString(Core.slurp(fileName, "UTF-8"));
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

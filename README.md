@@ -255,7 +255,7 @@ abc : java.lang.String
 
 (def p (. regex.Pattern compile "KOSPI200.*>(.+)</font>"))
 (defn get-quote ()
-  (def text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html"))
+  (def text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html" "euc-kr"))
   (def m (. p matcher text))
   (if (. m find) (. (. m group 1) replaceAll "&nbsp;" "") ""))
 
