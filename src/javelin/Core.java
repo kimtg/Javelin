@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.6.3";
+	public static final String VERSION = "0.6.4";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -1014,7 +1014,11 @@ public class Core {
 			} else if (tok.endsWith("L") || tok.endsWith("l")) { // long
 				return Long.parseLong(tok.substring(0, tok.length() - 1));
 			} else {
-				return Integer.parseInt(tok);
+				try {
+					return Integer.parseInt(tok);
+				} catch (NumberFormatException nfe) {
+					return Long.parseLong(tok); // parse big number to long
+				}
 			}
 		} else { // symbol
 			// other literals
