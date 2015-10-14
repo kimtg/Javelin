@@ -763,7 +763,6 @@ public class Core {
 
 	public Object evalString(String s) throws Exception {
 		s = "(" + s + "\n)";
-		//ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(Parser.parse(s)));
 		ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(parse(new StringReader(s))));
 		return evalAll(preprocessed);
 	}
