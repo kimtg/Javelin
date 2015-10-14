@@ -162,26 +162,10 @@ class Builtin {
 	static class _eq_eq implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
 			Object first = args.get(0);
-			if (first instanceof Integer) {
-				int firstv = Core.intValue(first);
-				for (int i = 1; i < args.size(); i++) {
-					if (Core.intValue(args.get(i)) != firstv) {
-						return false;
-					}
-				}
-			} else if (first instanceof Long) {
-				long firstv = Core.longValue(first);
-				for (int i = 1; i < args.size(); i++) {
-					if (Core.longValue(args.get(i)) != firstv) {
-						return false;
-					}
-				}
-			} else {
-				double firstv = Core.doubleValue(first);
-				for (int i = 1; i < args.size(); i++) {
-					if (Core.doubleValue(args.get(i)) != firstv) {
-						return false;
-					}
+			double firstv = Core.doubleValue(first);
+			for (int i = 1; i < args.size(); i++) {
+				if (Core.doubleValue(args.get(i)) != firstv) {
+					return false;
 				}
 			}
 			return true;
