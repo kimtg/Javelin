@@ -158,14 +158,13 @@ public class Core {
 		return (Symbol) value;
 	}
 
-	@SuppressWarnings("unchecked")
 	static Object apply(Object func, ArrayList<Object> args, Environment env) throws Exception {
 		if (func instanceof IFn) {
 			return ((IFn) func).invoke(args, env);
 		} else {
 			// implicit indexing
-			if (func instanceof List) {
-				return ((List<Object>) func).get(Core.intValue(args.get(0)));
+			if (func instanceof List<?>) {
+				return ((List<?>) func).get(Core.intValue(args.get(0)));
 			} else if (func.getClass().isArray()) {
 				return Array.get(func, Core.intValue(args.get(0)));
 			}
