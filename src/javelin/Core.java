@@ -2,6 +2,7 @@ package javelin;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.6.6";
+	public static final String VERSION = "0.6.7";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -779,6 +780,7 @@ public class Core {
 		while (true) {
 			try {
 				prompt();
+				if (eof(defaultReader)) break;
 				Object expr = parse(defaultReader);
 				System.out.println(strWithType(preprocessEval(expr, globalEnv)));
 			} catch (Exception e) {
@@ -898,7 +900,7 @@ public class Core {
 				if (ws.indexOf(p) < 0) break;
 				r.read();
 			}
-			if (eof(r)) throw new RuntimeException("EOF while reading");
+			if (eof(r)) throw new EOFException("EOF while reading");
 
 			p = peek(r);
 			if (prefix.indexOf(p) >= 0) { // prefix
