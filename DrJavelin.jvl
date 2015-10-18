@@ -33,7 +33,8 @@
 		(eval-code (. text getText)))))
 
 (defn eval-print (code)
-	(prn (str "> " code "\n" (eval-code code))))
+  (prn ">" code)
+	(prn (eval-code code)))
 
 (. textf addActionListener
 	(reify ActionListener
