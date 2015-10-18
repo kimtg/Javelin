@@ -6,21 +6,35 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
 
 class Builtin {
+	public static Object coerceNumberType(List<Object> args) {
+		Object r = Integer.TYPE;
+		for (Object x : args) {
+			if (x instanceof Double) {
+				return Double.TYPE;
+			} else if (x instanceof Long) {
+				r = Long.TYPE;
+			}
+		}
+		return r;
+	}
+	
 	static class _plus implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
 			int len = args.size();
 			if (len <= 0)
 				return 0;
+			Object type = coerceNumberType(args);
 			Object first = args.get(0);
-			if (first instanceof Integer) {
+			if (type == Integer.TYPE) {
 				int acc = Core.intValue(first);
 				for (int i = 1; i < len; i++) {
 					acc += Core.intValue(args.get(i));
 				}
 				return acc;
-			} else if (first instanceof Long) {
+			} else if (type == Long.TYPE) {
 				long acc = Core.longValue(first);
 				for (int i = 1; i < len; i++) {
 					acc += Core.longValue(args.get(i));
@@ -41,15 +55,16 @@ class Builtin {
 			int len = args.size();
 			if (len <= 0)
 				return 0;
+			Object type = coerceNumberType(args);
 			Object first = args.get(0);
-			if (first instanceof Integer) {
+			if (type == Integer.TYPE) {
 				int acc = Core.intValue(first);
 				if (len == 1) return -acc;
 				for (int i = 1; i < len; i++) {
 					acc -= Core.intValue(args.get(i));
 				}
 				return acc;
-			} else if (first instanceof Long) {
+			} else if (type == Long.TYPE) {
 				long acc = Core.longValue(first);
 				if (len == 1) return -acc;
 				for (int i = 1; i < len; i++) {
@@ -72,14 +87,15 @@ class Builtin {
 			int len = args.size();
 			if (len <= 0)
 				return 1;
+			Object type = coerceNumberType(args);
 			Object first = args.get(0);
-			if (first instanceof Integer) {
+			if (type == Integer.TYPE) {
 				int acc = Core.intValue(first);
 				for (int i = 1; i < len; i++) {
 					acc *= Core.intValue(args.get(i));
 				}
 				return acc;
-			} else if (first instanceof Long) {
+			} else if (type == Long.TYPE) {
 				long acc = Core.longValue(first);
 				for (int i = 1; i < len; i++) {
 					acc *= Core.longValue(args.get(i));
@@ -100,15 +116,16 @@ class Builtin {
 			int len = args.size();
 			if (len <= 0)
 				return 1;
+			Object type = coerceNumberType(args);
 			Object first = args.get(0);
-			if (first instanceof Integer) {
+			if (type == Integer.TYPE) {
 				int acc = Core.intValue(first);
 				if (len == 1) return 1 / acc;
 				for (int i = 1; i < len; i++) {
 					acc /= Core.intValue(args.get(i));
 				}
 				return acc;
-			} else if (first instanceof Long) {
+			} else if (type == Long.TYPE) {
 				long acc = Core.longValue(first);
 				if (len == 1) return 1 / acc;
 				for (int i = 1; i < len; i++) {
@@ -130,9 +147,10 @@ class Builtin {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
 			Object first = args.get(0);
 			Object second = args.get(1);
-			if (first instanceof Integer) {
+			Object type = coerceNumberType(args);
+			if (type == Integer.TYPE) {
 				return Core.intValue(first) % Core.intValue(second);
-			} else if (first instanceof Long) {
+			} else if (type == Long.TYPE) {
 				return Core.longValue(first) % Core.longValue(second);
 			} else {
 				return Core.doubleValue(first) % Core.doubleValue(second);
