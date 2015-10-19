@@ -780,8 +780,12 @@ public class Core {
 		while (true) {
 			try {
 				prompt();
-				if (eof(defaultReader)) break;
-				Object expr = parse(defaultReader);
+				Object expr;
+				try {
+					expr = parse(defaultReader);
+				} catch (EOFException e) {
+					break;
+				}
 				System.out.println(strWithType(preprocessEval(expr, globalEnv)));
 			} catch (Exception e) {
 				e.printStackTrace();
