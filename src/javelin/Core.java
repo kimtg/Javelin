@@ -895,13 +895,13 @@ public class Core {
 			char c, p;
 
 			// skip whitespaces
-			while (!eof(r)) {
+			while (true) {
+				if (eof(r)) throw new EOFException("EOF while reading");
 				p = peek(r);
 				if (ws.indexOf(p) < 0) break;
 				r.read();
 			}
-			if (eof(r)) throw new EOFException("EOF while reading");
-
+			
 			p = peek(r);
 			if (prefix.indexOf(p) >= 0) { // prefix
 				c = (char) r.read();
