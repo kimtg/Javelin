@@ -3,5 +3,5 @@ package javelin;
 import java.util.ArrayList;
 
 interface IFn {
-	public Object invoke(ArrayList<Object> args, Environment env) throws Exception;
+	public Object invoke(ArrayList<Object> args, Environment env) throws Throwable;
 }

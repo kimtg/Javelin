@@ -26,6 +26,7 @@ class Environment {
 		}
 	}
 	
+	// change an existing variable
 	Object set(int code, Object v) throws Exception {		
 		if (env.containsKey(code)) {
 			env.put(code, v);
@@ -39,6 +40,7 @@ class Environment {
 		}
 	}	
 
+	// define a new variable
 	Object def(int code, Object v) {
 		env.put(code, v);
 		return v;

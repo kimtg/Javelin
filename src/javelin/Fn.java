@@ -16,7 +16,7 @@ class Fn implements IFn { // anonymous function
 	}
 
 	@Override
-	public Object invoke(ArrayList<Object> args, Environment env) throws Exception {
+	public Object invoke(ArrayList<Object> args, Environment env) throws Throwable {
 		// anonymous function application. lexical scoping
 		// ((ARGUMENT ...) BODY ...)
 		fnStart: while (true) {
@@ -41,7 +41,7 @@ class Fn implements IFn { // anonymous function
 			for (int i = 1; i < len; i++) { // body
 				try {
 					ret = Core.eval(this.def.get(i), local_env);
-				} catch (RecurException e) {
+				} catch (Recur e) {
 					args = e.args;
 					continue fnStart; // recur this function (effectively goto)
 				}

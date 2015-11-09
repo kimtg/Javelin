@@ -25,4 +25,9 @@ class Symbol {
 	public String toString() {
 		return symname.get(code);
 	}
+
+	@Override
+	public boolean equals(Object o) {
+		return o instanceof Symbol && code == ((Symbol) o).code;
+	}
 }

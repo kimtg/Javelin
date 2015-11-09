@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.6.7";
+	public static final String VERSION = "0.7";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -49,8 +49,11 @@ public class Core {
 	static final Symbol sym_recur = new Symbol("recur");
 	static final Symbol sym_loop = new Symbol("loop");
 	static final Symbol sym_quasiquote = new Symbol("quasiquote");
+	static final Symbol sym_try = new Symbol("try");
+	static final Symbol sym_catch = new Symbol("catch");
+	static final Symbol sym_finally = new Symbol("finally");
 
-	public Core() throws Exception {
+	public Core() throws Throwable {
 		set("+", new Builtin._plus());
 		set("-", new Builtin._minus());
 		set("*", new Builtin._star());
@@ -159,7 +162,7 @@ public class Core {
 		return (Symbol) value;
 	}
 
-	static Object apply(Object func, ArrayList<Object> args, Environment env) throws Exception {
+	static Object apply(Object func, ArrayList<Object> args, Environment env) throws Throwable {
 		if (func instanceof IFn) {
 			return ((IFn) func).invoke(args, env);
 		} else {
@@ -215,7 +218,7 @@ public class Core {
 
 	static HashMap<String, Fn> macros = new HashMap<>();
 
-	static Object macroexpand(Object n) throws Exception {
+	static Object macroexpand(Object n) throws Throwable {
 		if (n instanceof ArrayList) {
 			ArrayList<Object> expr = Core.arrayListValue(n);
 			if (macros.containsKey(expr.get(0).toString())) {
@@ -241,7 +244,7 @@ public class Core {
 		}
 	}
 
-	static Object preprocess(Object n) throws Exception {
+	static Object preprocess(Object n) throws Throwable {
 		if (n instanceof ArrayList) { // function (FUNCTION ARGUMENT ...)
 			ArrayList<Object> expr = Core.arrayListValue(n);
 			if (expr.size() == 0)
@@ -266,7 +269,7 @@ public class Core {
 		}
 	}
 
-	static Object eval(Object n, Environment env) throws Exception {
+	static Object eval(Object n, Environment env) throws Throwable {
 		if (n instanceof Symbol) {
 			Object r = env.get(((Symbol) n).code);
 			return r;
@@ -523,7 +526,7 @@ public class Core {
 								for (Object n : exprs) {
 									eval(n, env2);
 								}
-							} catch (Exception e) {
+							} catch (Throwable e) {
 								e.printStackTrace();
 							}
 						}
@@ -623,7 +626,7 @@ public class Core {
 					for (int i = 1; i < expr.size(); i++) {
 						args.add(eval(expr.get(i), env));
 					}
-					throw new RecurException(args);
+					throw new Recur(args);
 				}
 				else if (code == sym_loop.code) // (loop (VAR VALUE ...) BODY ...)
 				{
@@ -647,7 +650,7 @@ public class Core {
 						for (int i = 2; i < expr.size(); i++) {
 							try {
 								ret = eval(expr.get(i), env2);
-							} catch (RecurException e) {
+							} catch (Recur e) {
 								actualParams = e.args;
 								continue loopStart; // recur this loop (effectively goto)
 							}
@@ -658,6 +661,48 @@ public class Core {
 				else if (code == sym_quasiquote.code) // (quasiquote S-EXPRESSION)
 				{
 					return quasiquote(expr.get(1), env);
+				}
+				else if (code == sym_try.code) // (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
+				{
+					int i = 1, len = expr.size();
+					Object ret = null;
+					try {
+						for (; i < len; i++) {
+							Object e = expr.get(i);
+							if (e instanceof List) {
+								Object prefix = ((List<?>) e).get(0);
+								if (prefix.equals(sym_catch) || prefix.equals(sym_finally)) break;
+							}
+							ret = eval(e, env);
+						}
+					} catch (Throwable t) {
+						for (; i < len; i++) {
+							Object e = expr.get(i);
+							if (e instanceof List) {
+								List<?> exprs = (List<?>) e;
+								if (exprs.get(0).equals(sym_catch) && getClass(exprs.get(1).toString()).isInstance(t)) {
+									Environment env2 = new Environment(env);
+									env2.def(Symbol.toCode(exprs.get(2).toString()), t);
+									for (int j = 3; j < exprs.size(); j++) {
+										ret = eval(exprs.get(j), env2);
+									}
+									return ret;									
+								}
+							}
+						}
+						throw t;
+					} finally {
+						for (; i < len; i++) {
+							Object e = expr.get(i);
+							if (e instanceof List && ((List<?>) e).get(0).equals(sym_finally)) {
+								List<?> exprs = (List<?>) e;
+								for (int j = 1; j < exprs.size(); j++) {
+									eval(exprs.get(j), env);
+								}
+							}
+						}
+					}
+					return ret;
 				}
 			}
 			// evaluate arguments
@@ -674,7 +719,7 @@ public class Core {
 		}
 	}
 
-	private static Object quasiquote(Object arg, Environment env) throws Exception {
+	private static Object quasiquote(Object arg, Environment env) throws Throwable {
 		if (arg instanceof ArrayList && ((ArrayList<?>) arg).size() > 0) {
 			@SuppressWarnings("unchecked")
 			ArrayList<Object> arg2 = (ArrayList<Object>) arg;
@@ -741,7 +786,7 @@ public class Core {
 		}
 	}
 
-	ArrayList<Object> preprocessAll(ArrayList<Object> lst) throws Exception {
+	ArrayList<Object> preprocessAll(ArrayList<Object> lst) throws Throwable {
 		ArrayList<Object> preprocessed = new ArrayList<Object>();
 		int last = lst.size() - 1;
 		for (int i = 0; i <= last; i++) {
@@ -750,7 +795,7 @@ public class Core {
 		return preprocessed;
 	}
 
-	Object evalAll(ArrayList<Object> lst) throws Exception {
+	Object evalAll(ArrayList<Object> lst) throws Throwable {
 		int last = lst.size() - 1;
 		if (last < 0)
 			return null;
@@ -761,13 +806,13 @@ public class Core {
 		return ret;
 	}
 
-	public Object evalString(String s) throws Exception {
+	public Object evalString(String s) throws Throwable {
 		s = "(" + s + "\n)";
 		ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(parse(new StringReader(s))));
 		return evalAll(preprocessed);
 	}
 
-	void evalPrint(String s) throws Exception {
+	void evalPrint(String s) throws Throwable {
 		System.out.println(Core.strWithType(evalString(s)));
 	}
 
@@ -787,7 +832,7 @@ public class Core {
 					break;
 				}
 				System.out.println(strWithType(preprocessEval(expr, globalEnv)));
-			} catch (Exception e) {
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
@@ -839,7 +884,7 @@ public class Core {
 
 	public static Object testField;
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Throwable {
 		if (args.length == 0) {
 			Core p = new Core();
 			printLogo();
@@ -871,7 +916,7 @@ public class Core {
 		}
 	}
 
-	public static Object preprocessEval(Object object, Environment env) throws Exception {
+	public static Object preprocessEval(Object object, Environment env) throws Throwable {
 		return eval(preprocess(object), env);
 	}
 
