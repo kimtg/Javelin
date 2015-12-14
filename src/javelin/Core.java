@@ -812,10 +812,6 @@ public class Core {
 		return evalAll(preprocessed);
 	}
 
-	void evalPrint(String s) throws Throwable {
-		System.out.println(Core.strWithType(evalString(s)));
-	}
-
 	static void prompt() {
 		System.out.print("> ");
 	}
