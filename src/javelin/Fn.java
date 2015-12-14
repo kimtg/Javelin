@@ -16,7 +16,7 @@ class Fn implements IFn { // anonymous function
 	}
 
 	@Override
-	public Object invoke(ArrayList<Object> args, Environment env) throws Throwable {
+	public Object invoke(ArrayList<Object> args) throws Throwable {
 		// anonymous function application. lexical scoping
 		// ((ARGUMENT ...) BODY ...)
 		fnStart: while (true) {

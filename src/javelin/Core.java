@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.7";
+	public static final String VERSION = "0.7.1";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -162,9 +162,9 @@ public class Core {
 		return (Symbol) value;
 	}
 
-	static Object apply(Object func, ArrayList<Object> args, Environment env) throws Throwable {
+	static Object apply(Object func, ArrayList<Object> args) throws Throwable {
 		if (func instanceof IFn) {
-			return ((IFn) func).invoke(args, env);
+			return ((IFn) func).invoke(args);
 		} else {
 			// implicit indexing
 			if (func instanceof List<?>) {
@@ -230,7 +230,7 @@ public class Core {
 				for (int i = 1; i < len; i++) {
 					args.add(expr.get(i));
 				}
-				Object r = apply(func, args, globalEnv);
+				Object r = apply(func, args);
 				return macroexpand(r); // macroexpand again
 			} else {
 				ArrayList<Object> r = new ArrayList<Object>();
@@ -601,11 +601,9 @@ public class Core {
 					}
 					class MyHandler implements InvocationHandler {
 						HashMap<String, Fn> methods;
-						Environment env;
 
 						public MyHandler(HashMap<String, Fn> methods, Environment env) {
 							this.methods = methods;
-							this.env = env;
 						}
 
 						@Override
@@ -613,7 +611,7 @@ public class Core {
 							ArrayList<Object> args2 = new ArrayList<Object>();
 							args2.add(this);
 							args2.addAll(Arrays.asList(args));
-							return apply(methods.get(method.getName()), args2, env);
+							return apply(methods.get(method.getName()), args2);
 						}
 					}
 					InvocationHandler handler = new MyHandler(methods, env);
@@ -712,7 +710,7 @@ public class Core {
 			for (int i = 1; i < len; i++) {
 				args.add(eval(expr.get(i), env));
 			}
-			return apply(func, args, env);
+			return apply(func, args);
 		} else {
 			// return n.clone();
 			return n;
