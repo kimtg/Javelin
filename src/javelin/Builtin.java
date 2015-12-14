@@ -340,12 +340,11 @@ class Builtin {
 		}
 	}
 
+	static final pr pr1 = new pr();
+
 	static class prn implements IFn {
 		public Object invoke(ArrayList<Object> args, Environment env) throws Throwable {
-			for (int i = 0; i < args.size(); i++) {
-				if (i != 0) System.out.print(" ");
-				System.out.print(args.get(i));
-			}
+			pr1.invoke(args, env);
 			System.out.println();
 			return null;
 		}

@@ -75,7 +75,7 @@ public class Core {
 		set("fold", new Builtin.fold());
 		set("map", new Builtin.map());
 		set("filter", new Builtin.filter());
-		set("pr", new Builtin.pr());
+		set("pr", Builtin.pr1);
 		set("prn", new Builtin.prn());
 		set("read-line", new Builtin.read_line());
 		set("slurp", new Builtin.slurp());
