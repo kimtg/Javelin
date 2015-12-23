@@ -21,7 +21,7 @@ class Builtin {
 		return r;
 	}
 	
-	static class _plus implements IFn {
+	static class _plus extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			int len = args.size();
 			if (len <= 0)
@@ -50,7 +50,7 @@ class Builtin {
 		}
 	}
 
-	static class _minus implements IFn {
+	static class _minus extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			int len = args.size();
 			if (len <= 0)
@@ -82,7 +82,7 @@ class Builtin {
 		}
 	}
 
-	static class _star implements IFn {
+	static class _star extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			int len = args.size();
 			if (len <= 0)
@@ -111,7 +111,7 @@ class Builtin {
 		}
 	}
 
-	static class _slash implements IFn {
+	static class _slash extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			int len = args.size();
 			if (len <= 0)
@@ -143,7 +143,7 @@ class Builtin {
 		}
 	}
 
-	static class mod implements IFn {
+	static class mod extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object first = args.get(0);
 			Object second = args.get(1);
@@ -158,7 +158,7 @@ class Builtin {
 		}
 	}
 
-	static class _eq implements IFn {
+	static class _eq extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object v1 = args.get(0);
 			if (v1 == null) {
@@ -177,7 +177,7 @@ class Builtin {
 		}
 	}
 
-	static class _eq_eq implements IFn {
+	static class _eq_eq extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object first = args.get(0);
 			double firstv = Core.doubleValue(first);
@@ -190,7 +190,7 @@ class Builtin {
 		}
 	}
 
-	static class Not_eq implements IFn {
+	static class Not_eq extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object v1 = args.get(0);
 			if (v1 == null) {
@@ -209,7 +209,7 @@ class Builtin {
 		}
 	}
 
-	static class _lt implements IFn {
+	static class _lt extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			for (int i = 0; i < args.size() - 1; i++) {
 				Object first = args.get(i);
@@ -220,7 +220,7 @@ class Builtin {
 		}
 	}
 
-	static class _gt implements IFn {
+	static class _gt extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			for (int i = 0; i < args.size() - 1; i++) {
 				Object first = args.get(i);
@@ -231,7 +231,7 @@ class Builtin {
 		}
 	}
 
-	static class _lt_eq implements IFn {
+	static class _lt_eq extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			for (int i = 0; i < args.size() - 1; i++) {
 				Object first = args.get(i);
@@ -242,7 +242,7 @@ class Builtin {
 		}
 	}
 
-	static class _gt_eq implements IFn {
+	static class _gt_eq extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			for (int i = 0; i < args.size() - 1; i++) {
 				Object first = args.get(i);
@@ -253,31 +253,31 @@ class Builtin {
 		}
 	}
 
-	static class not implements IFn {
+	static class not extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return !Core.booleanValue(args.get(0));
 		}
 	}
 
-	static class read_string implements IFn {
+	static class read_string extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return Core.parse(new StringReader((String) args.get(0)));
 		}
 	}
 
-	static class type implements IFn {
+	static class type extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return Core.type(args.get(0));
 		}
 	}
 
-	static class eval implements IFn {
+	static class eval extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return Core.preprocessEval(args.get(0), Core.globalEnv);
 		}
 	}
 
-	static class fold implements IFn {
+	static class fold extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object f = args.get(0);
 			ArrayList<Object> lst = Core.arrayListValue(args.get(1));
@@ -294,7 +294,7 @@ class Builtin {
 		}
 	}
 
-	static class map implements IFn {
+	static class map extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object f = args.get(0);
 			ArrayList<Object> lst = Core.arrayListValue(args.get(1));
@@ -308,13 +308,13 @@ class Builtin {
 		}
 	}
 
-	static class apply implements IFn {
+	static class apply extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return Core.apply(args.get(0), Core.arrayListValue(args.get(1)));
 		}
 	}
 
-	static class filter implements IFn {
+	static class filter extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object f = args.get(0);
 			ArrayList<Object> lst = Core.arrayListValue(args.get(1));
@@ -330,7 +330,7 @@ class Builtin {
 		}
 	}
 
-	static class pr implements IFn {
+	static class pr extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			for (int i = 0; i < args.size(); i++) {
 				if (i != 0) System.out.print(" ");
@@ -342,7 +342,7 @@ class Builtin {
 
 	static final pr pr1 = new pr();
 
-	static class prn implements IFn {
+	static class prn extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			pr1.invoke(args);
 			System.out.println();
@@ -350,7 +350,7 @@ class Builtin {
 		}
 	}
 
-	static class read_line implements IFn {
+	static class read_line extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 			try {
@@ -362,7 +362,7 @@ class Builtin {
 	}
 
 	// (slurp filename [encoding]) default encoding: UTF-8
-	static class slurp implements IFn {
+	static class slurp extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			String filename = Core.toString(args.get(0));
 			String charset = args.size() >= 2 ? args.get(1).toString() : "UTF-8";
@@ -370,7 +370,7 @@ class Builtin {
 		}
 	}
 
-	static class spit implements IFn {
+	static class spit extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			String filename = Core.toString(args.get(0));
 			String str = Core.toString(args.get(1));
@@ -378,13 +378,13 @@ class Builtin {
 		}
 	}
 
-	static class list implements IFn {
+	static class list extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return args;
 		}
 	}
 
-	static class str implements IFn {
+	static class str extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			StringBuilder sb = new StringBuilder();
 			for (Object x : args) {
@@ -394,21 +394,21 @@ class Builtin {
 		}
 	}
 
-	static class symbol implements IFn {
+	static class symbol extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return new javelin.Symbol(Core.toString(args.get(0)));
 		}
 	}
 
 	// (macroexpand X)
-	static class macroexpand implements IFn {
+	static class macroexpand extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			return Core.macroexpand(args.get(0));
 		}
 	}
 	
 	// (read [Reader])
-	static class read implements IFn {
+	static class read extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			switch (args.size()) {
 			case 0: return Core.parse(Core.defaultReader);

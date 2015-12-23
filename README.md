@@ -27,7 +27,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Special forms:
- . .get .set! and catch def do doseq finally fn if import let loop new or quasiquote quote recur reify set! thread try
+ . .get .set! and catch def do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Functions:
  * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr prn read read-line read-string slurp spit str symbol type
 Macros:
@@ -111,17 +111,17 @@ In a function, [lexical scoping](http://en.wikipedia.org/wiki/Lexical_scoping#Le
 > ((fn (x) (* x 2)) 3)
 6 : java.lang.Integer
 > (defn foo (x & more) (list x more)) ; variadic function
-#<function:[[x, &, more], [list, x, more]]> : javelin.Core$Fn
+#<function:[[x, &, more], [list, x, more]]> : javelin.UserFn
 > (foo 1 2 3 4 5)
 [1, [2, 3, 4, 5]] : java.util.ArrayList
 > (defn sum (x y) (+ x y))
-#<function:[[x, y], [+, x, y]]> : javelin.Core$Fn
+#<function:[[x, y], [+, x, y]]> : javelin.UserFn
 > (sum 1 2)
 3 : java.lang.Integer
 > (fold + '(1 2 3))
 6 : java.lang.Integer
 > (defn even? (x) (== 0 (mod x 2)))
-#<function:[[x], [==, 0, [mod, x, 2]]]> : javelin.Core$Fn
+#<function:[[x], [==, 0, [mod, x, 2]]]> : javelin.UserFn
 > (even? 3)
 false : java.lang.Boolean
 > (even? 4)
@@ -207,7 +207,10 @@ nil : nil
 
 ### Thread ###
 ```
-> (def t1 (thread (loop (i 1) (when (<= i 10) (pr "" i) (recur (+ i 1)))))) (def t2 (thread (loop (i 11) (when (<= i 20) (pr "" i) (recur (+ i 1)))))) (. t1 join) (. t2 join)
+> ; All functions are java.lang.Runnable's.
+  (def t1 (new Thread (fn () (loop (i 1) (when (<= i 10) (pr "" i) (recur (+ i 1)))))))
+  (def t2 (new Thread (fn () (loop (i 11) (when (<= i 20) (pr "" i) (recur (+ i 1)))))))
+  (. t1 start) (. t2 start) (. t1 join) (. t2 join)
   111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil : nil
 ```
 

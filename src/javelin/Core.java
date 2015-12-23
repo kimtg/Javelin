@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.7.1";
+	public static final String VERSION = "0.8";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -41,7 +41,6 @@ public class Core {
 	static final Symbol sym__dotget = new Symbol(".get");
 	static final Symbol sym__dotset_e = new Symbol(".set!");
 	static final Symbol sym_new = new Symbol("new");
-	static final Symbol sym_thread = new Symbol("thread");
 	static final Symbol sym_doseq = new Symbol("doseq");
 	static final Symbol sym_let = new Symbol("let");
 	static final Symbol sym_import = new Symbol("import");
@@ -163,8 +162,8 @@ public class Core {
 	}
 
 	static Object apply(Object func, ArrayList<Object> args) throws Throwable {
-		if (func instanceof IFn) {
-			return ((IFn) func).invoke(args);
+		if (func instanceof Fn) {
+			return ((Fn) func).invoke(args);
 		} else {
 			// implicit indexing
 			if (func instanceof List<?>) {
@@ -216,13 +215,13 @@ public class Core {
 		printCollection(macros.keySet());
 	}
 
-	static HashMap<String, Fn> macros = new HashMap<>();
+	static HashMap<String, UserFn> macros = new HashMap<>();
 
 	static Object macroexpand(Object n) throws Throwable {
 		if (n instanceof ArrayList) {
 			ArrayList<Object> expr = Core.arrayListValue(n);
 			if (macros.containsKey(expr.get(0).toString())) {
-				Fn func = macros.get(expr.get(0).toString());
+				UserFn func = macros.get(expr.get(0).toString());
 
 				// build arguments
 				ArrayList<Object> args = new ArrayList<Object>();
@@ -253,7 +252,7 @@ public class Core {
 			if (func instanceof Symbol) {
 				if (func.toString().equals("defmacro")) {
 					// (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
-					macros.put(expr.get(1).toString(), new Fn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
+					macros.put(expr.get(1).toString(), new UserFn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
 					return null;
 				} else if (func.toString().equals("quote")) {
 					// skip quote
@@ -336,7 +335,7 @@ public class Core {
 					for (int i = 1; i < expr.size(); i++) {
 						r.add(expr.get(i));
 					}
-					return new Fn(r, env);
+					return new UserFn(r, env);
 				}
 				else if (code == sym_do.code) { // (do X ...)
 					int last = expr.size() - 1;
@@ -516,24 +515,6 @@ public class Core {
 						return null;
 					}
 				}
-				else if (code == sym_thread.code) { // (thread EXPR ...): Creates new thread and
-								// starts it.
-					final ArrayList<Object> exprs = new ArrayList<Object>(expr.subList(1, expr.size()));
-					final Environment env2 = new Environment(env);
-					Thread t = new Thread() {
-						public void run() {
-							try {
-								for (Object n : exprs) {
-									eval(n, env2);
-								}
-							} catch (Throwable e) {
-								e.printStackTrace();
-							}
-						}
-					};
-					t.start();
-					return t;
-				}
 				else if (code == sym_doseq.code) // (doseq (VAR SEQ) EXPR ...)
 				{
 					Environment env2 = new Environment(env);
@@ -593,16 +574,16 @@ public class Core {
 
 					Class<?> cls = getClass(expr.get(1).toString());
 					ClassLoader cl = cls.getClassLoader();
-					HashMap<String, Fn> methods = new HashMap<String, Fn>();
+					HashMap<String, UserFn> methods = new HashMap<String, UserFn>();
 					for (int i = 2; i < expr.size(); i++) {
 						@SuppressWarnings("unchecked")
 						ArrayList<Object> methodDef = (ArrayList<Object>) expr.get(i);
-						methods.put(methodDef.get(0).toString(), new Fn(new ArrayList<Object>(methodDef.subList(1, methodDef.size())), env));
+						methods.put(methodDef.get(0).toString(), new UserFn(new ArrayList<Object>(methodDef.subList(1, methodDef.size())), env));
 					}
 					class MyHandler implements InvocationHandler {
-						HashMap<String, Fn> methods;
+						HashMap<String, UserFn> methods;
 
-						public MyHandler(HashMap<String, Fn> methods, Environment env) {
+						public MyHandler(HashMap<String, UserFn> methods, Environment env) {
 							this.methods = methods;
 						}
 
