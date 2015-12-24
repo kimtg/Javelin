@@ -111,35 +111,35 @@ class Builtin {
 		}
 	}
 
+	// always use doubleValue
 	static class _slash extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			int len = args.size();
 			if (len <= 0)
 				return 1;
-			Object type = coerceNumberType(args);
 			Object first = args.get(0);
-			if (type == Integer.TYPE) {
-				int acc = Core.intValue(first);
-				if (len == 1) return 1 / acc;
-				for (int i = 1; i < len; i++) {
-					acc /= Core.intValue(args.get(i));
-				}
-				return acc;
-			} else if (type == Long.TYPE) {
-				long acc = Core.longValue(first);
-				if (len == 1) return 1 / acc;
-				for (int i = 1; i < len; i++) {
-					acc /= Core.longValue(args.get(i));
-				}
-				return acc;
-			} else {
-				double acc = Core.doubleValue(first);
-				if (len == 1) return 1 / acc;
-				for (int i = 1; i < len; i++) {
-					acc /= Core.doubleValue(args.get(i));
-				}
-				return acc;
+			double acc = Core.doubleValue(first);
+			if (len == 1) return 1 / acc;
+			for (int i = 1; i < len; i++) {
+				acc /= Core.doubleValue(args.get(i));
 			}
+			return acc;
+		}
+	}
+
+	// quotient
+	static class quot extends Fn {
+		public Object invoke(ArrayList<Object> args) throws Throwable {
+			int len = args.size();
+			if (len <= 0)
+				return 1;
+			Object first = args.get(0);
+			long acc = Core.longValue(first);
+			if (len == 1) return 1 / acc;
+			for (int i = 1; i < len; i++) {
+				acc /= Core.longValue(args.get(i));
+			}
+			return acc;
 		}
 	}
 

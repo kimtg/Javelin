@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.8.1";
+	public static final String VERSION = "0.8.2";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -57,6 +57,7 @@ public class Core {
 		set("-", new Builtin._minus());
 		set("*", new Builtin._star());
 		set("/", new Builtin._slash());
+		set("quot", new Builtin.quot());
 		set("mod", new Builtin.mod());
 		set("=", new Builtin._eq());
 		set("==", new Builtin._eq_eq());

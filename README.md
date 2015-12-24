@@ -29,7 +29,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 Special forms:
  . .get .set! and catch def do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Functions:
- * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr prn read read-line read-string slurp spit str symbol type
+ * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr prn quot read read-line read-string slurp spit str symbol type
 Macros:
  defn dotimes when while
 ```
@@ -95,7 +95,7 @@ a : java.lang.Character
 > (doseq (x '(1 2 3)) (pr x))
 123nil : nil
 ; (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
-> (try (/ 1 0) (catch ArithmeticException e (prn e) 3) (finally (prn 4)))
+> (try (quot 1 0) (catch ArithmeticException e (prn e) 3) (finally (prn 4)))
 java.lang.ArithmeticException: / by zero
 4
 3 : java.lang.Integer
