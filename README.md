@@ -105,6 +105,32 @@ java.lang.ArithmeticException: / by zero
 
 In a function, [lexical scoping](http://en.wikipedia.org/wiki/Lexical_scoping#Lexical_scoping) is used.
 
+Functions implement java.util.concurrent.Callable, java.java.lang.Runnable and java.util.Comparator interfaces.
+
+Callable
+```
+> (. * call)
+1 : java.lang.Integer
+```
+
+Runnable
+```
+> (def t1 (new Thread (fn () (loop (i 1) (when (<= i 10) (pr "" i) (recur (+ i 1)))))))
+  (def t2 (new Thread (fn () (loop (i 11) (when (<= i 20) (pr "" i) (recur (+ i 1)))))))
+  (. t1 start) (. t2 start) (. t1 join) (. t2 join)
+  111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil : nil
+```
+
+Comparator
+```
+> (def a (list 3 2 1))
+[3, 2, 1] : java.util.ArrayList
+> (. java.util.Collections sort a -)
+nil : nil
+> a
+[1, 2, 3] : java.util.ArrayList
+```
+
 ```
 > ((fn (x y) (+ x y)) 1 2)
 3 : java.lang.Integer
@@ -203,15 +229,6 @@ nil : nil
 [+, 3, 4, 5] : java.util.ArrayList
 > (macroexpand '(while true (prn 1)))
 [loop, [], [if, true, [do, [prn, 1], [recur]]]] : java.util.ArrayList
-```
-
-### Thread ###
-```
-> ; All functions are java.lang.Runnable's.
-  (def t1 (new Thread (fn () (loop (i 1) (when (<= i 10) (pr "" i) (recur (+ i 1)))))))
-  (def t2 (new Thread (fn () (loop (i 11) (when (<= i 20) (pr "" i) (recur (+ i 1)))))))
-  (. t1 start) (. t2 start) (. t1 join) (. t2 join)
-  111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil : nil
 ```
 
 ### Java interoperability (from Javelin) ###
