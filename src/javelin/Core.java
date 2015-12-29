@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.8.3";
+	public static final String VERSION = "0.8.4";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -149,9 +149,25 @@ public class Core {
 	static String strWithType(Object value) {
 		String s = "";
 		if (value == null) s = "nil";
-		else if (value instanceof String) s = "\"" + value + "\"";
+		else if (value instanceof String) s = "\"" + escape((String) value) + "\"";
 		else s = value.toString();
 		return s + " : " + type(value);
+	}
+
+	static String escape(String value) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < value.length(); i++) {
+			char c = value.charAt(i);
+			switch (c) {
+			case '\b': sb.append("\\b"); break;
+			case '\f': sb.append("\\f"); break;
+			case '\n': sb.append("\\n"); break;
+			case '\r': sb.append("\\r"); break;
+			case '\t': sb.append("\\t"); break;			
+			default: sb.append(c); break;
+			}
+		}
+		return sb.toString();
 	}
 
 	static public String toString(Object value) {
