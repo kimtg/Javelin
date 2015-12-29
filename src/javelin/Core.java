@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.8.2";
+	public static final String VERSION = "0.8.3";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -955,6 +955,10 @@ public class Core {
 							next = '\n';
 						else if (next == 't')
 							next = '\t';
+						else if (next == 'b')
+							next = '\b';
+						else if (next == 'f')
+							next = '\f';
 						acc.append(next);
 					} else {
 						acc.append(c);
