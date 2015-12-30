@@ -461,7 +461,7 @@ public class Core {
 
 						String fieldName = expr.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
-						return field.get(cls);
+						return field.get(obj);
 					} catch (Exception e) {
 						e.printStackTrace();
 						return null;
@@ -487,7 +487,7 @@ public class Core {
 						String fieldName = expr.get(2).toString();
 						java.lang.reflect.Field field = cls.getField(fieldName);
 						Object value = eval(expr.get(3), env);
-						field.set(cls, value);
+						field.set(obj, value);
 						return null;
 					} catch (Exception e) {
 						e.printStackTrace();
