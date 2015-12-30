@@ -334,7 +334,7 @@ class Builtin {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			for (int i = 0; i < args.size(); i++) {
 				if (i != 0) System.out.print(" ");
-				System.out.print(args.get(i));
+				System.out.print(Core.toReadableString(args.get(i)));
 			}
 			return null;
 		}
@@ -345,6 +345,26 @@ class Builtin {
 	static class prn extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			pr1.invoke(args);
+			System.out.println();
+			return null;
+		}
+	}
+
+	static class print extends Fn {
+		public Object invoke(ArrayList<Object> args) throws Throwable {
+			for (int i = 0; i < args.size(); i++) {
+				if (i != 0) System.out.print(" ");
+				System.out.print(args.get(i));
+			}
+			return null;
+		}
+	}
+
+	static final print print1 = new print();
+
+	static class println extends Fn {
+		public Object invoke(ArrayList<Object> args) throws Throwable {
+			print1.invoke(args);
 			System.out.println();
 			return null;
 		}

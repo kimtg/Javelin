@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.8.4";
+	public static final String VERSION = "0.9";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -77,6 +77,8 @@ public class Core {
 		set("filter", new Builtin.filter());
 		set("pr", Builtin.pr1);
 		set("prn", new Builtin.prn());
+		set("print", Builtin.print1);
+		set("println", new Builtin.println());
 		set("read-line", new Builtin.read_line());
 		set("slurp", new Builtin.slurp());
 		set("spit", new Builtin.spit());
@@ -145,13 +147,29 @@ public class Core {
 		else
 			return value.getClass().getName();
 	}
+	
+	static String toReadableString(Object value) {		
+		if (value == null) return "nil";
+		else if (value instanceof String) return "\"" + escape((String) value) + "\"";
+		else if (value instanceof List) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("(");
+			boolean first = true;
+			for (Object o : (List<?>) value) {
+				if (!first) {
+					sb.append(" ");
+				}
+				sb.append(toReadableString(o));
+				first = false;
+			}			
+			sb.append(")");
+			return sb.toString();
+		}
+		else return value.toString();
+	}
 
 	static String strWithType(Object value) {
-		String s = "";
-		if (value == null) s = "nil";
-		else if (value instanceof String) s = "\"" + escape((String) value) + "\"";
-		else s = value.toString();
-		return s + " : " + type(value);
+		return toReadableString(value) + " : " + type(value);
 	}
 
 	static String escape(String value) {

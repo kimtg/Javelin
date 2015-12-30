@@ -29,7 +29,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 Special forms:
  . .get .set! and catch def do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Functions:
- * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr prn quot read read-line read-string slurp spit str symbol type
+ * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr print println prn quot read read-line read-string slurp spit str symbol type
 Macros:
  defn dotimes when while
 ```
@@ -37,7 +37,7 @@ Macros:
 ## Examples ##
 ### Hello, World! ###
 ```
-(prn "Hello, World!")
+(println "Hello, World!")
 ```
 
 ```
@@ -92,10 +92,10 @@ a : java.lang.Character
 ```
 > (let (a 1, b 2) (+ a b)) ; , is whitespace.
 3 : java.lang.Integer
-> (doseq (x '(1 2 3)) (pr x))
+> (doseq (x '(1 2 3)) (print x))
 123nil : nil
 ; (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
-> (try (quot 1 0) (catch ArithmeticException e (prn e) 3) (finally (prn 4)))
+> (try (quot 1 0) (catch ArithmeticException e (println e) 3) (finally (println 4)))
 java.lang.ArithmeticException: / by zero
 4
 3 : java.lang.Integer
@@ -115,8 +115,8 @@ Callable
 
 Runnable
 ```
-> (def t1 (new Thread (fn () (loop (i 1) (when (<= i 10) (pr "" i) (recur (+ i 1)))))))
-  (def t2 (new Thread (fn () (loop (i 11) (when (<= i 20) (pr "" i) (recur (+ i 1)))))))
+> (def t1 (new Thread (fn () (loop (i 1) (when (<= i 10) (print "" i) (recur (+ i 1)))))))
+  (def t2 (new Thread (fn () (loop (i 11) (when (<= i 20) (print "" i) (recur (+ i 1)))))))
   (. t1 start) (. t2 start) (. t1 join) (. t2 join)
   111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil : nil
 ```
@@ -124,11 +124,11 @@ Runnable
 Comparator
 ```
 > (def a (list 3 2 1))
-[3, 2, 1] : java.util.ArrayList
+(3 2 1) : java.util.ArrayList
 > (. java.util.Collections sort a -)
 nil : nil
 > a
-[1, 2, 3] : java.util.ArrayList
+(1 2 3) : java.util.ArrayList
 ```
 
 ```
@@ -139,7 +139,7 @@ nil : nil
 > (defn foo (x & more) (list x more)) ; variadic function
 #<function:[[x, &, more], [list, x, more]]> : javelin.UserFn
 > (foo 1 2 3 4 5)
-[1, [2, 3, 4, 5]] : java.util.ArrayList
+(1 (2 3 4 5)) : java.util.ArrayList
 > (defn sum (x y) (+ x y))
 #<function:[[x, y], [+, x, y]]> : javelin.UserFn
 > (sum 1 2)
@@ -155,13 +155,13 @@ true : java.lang.Boolean
 > (apply + (list 1 2 3))
 6 : java.lang.Integer
 > (map (fn (x) (. Math sqrt x)) (list 1 2 3 4))
-[1.0, 1.4142135623730951, 1.7320508075688772, 2.0] : java.util.ArrayList
+(1.0 1.4142135623730951 1.7320508075688772 2.0) : java.util.ArrayList
 > (filter even? (list 1 2 3 4 5))
-[2, 4] : java.util.ArrayList
+(2 4) : java.util.ArrayList
 > (= "abc" "abc") ; Object.equals()
 true : java.lang.Boolean
 > (def x 1)
-  ((fn (x) (prn x) (set! x 3) (prn x)) 4) ; lexical scoping
+  ((fn (x) (println x) (set! x 3) (println x)) 4) ; lexical scoping
   x
 4
 3
@@ -190,7 +190,7 @@ Warning: `recur` does not check the tail position.
 500500 : java.lang.Integer
 > (sum-nonrecur 1000) ; stack overflow
 Exception in thread "main" java.lang.StackOverflowError
-> (loop (i 0) (when (< i 5) (pr i) (recur (+ i 1))))
+> (loop (i 0) (when (< i 5) (print i) (recur (+ i 1))))
 01234nil : nil
 ```
 
@@ -226,17 +226,17 @@ nil : nil
 > (infix 3 + 4 5)
 12 : java.lang.Integer
 > (macroexpand '(infix 3 + 4 5))
-[+, 3, 4, 5] : java.util.ArrayList
-> (macroexpand '(while true (prn 1)))
-[loop, [], [if, true, [do, [prn, 1], [recur]]]] : java.util.ArrayList
+(+  3 4 5) : java.util.ArrayList
+> (macroexpand '(while true (println 1)))
+(loop () (if true (do (println 1) (recur)))) : java.util.ArrayList
 ```
 
 ### Java interoperability (from Javelin) ###
 ```
 > (import) ; shows current import list. java.lang is imported by default. Classes are found in this order.
-[java.lang] : java.util.ArrayList
+("java.lang") : java.util.ArrayList
 > (import java.util)
-[java.lang, java.util] : java.util.ArrayList
+("java.lang" "java.util") : java.util.ArrayList
 > (new Date)
 Tue Sep 22 14:33:28 KST 2015 : java.util.Date
 > (. Math random) ; class's static method.
@@ -292,10 +292,10 @@ abc : java.lang.String
     (def text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html" "euc-kr"))
     (def m (. p matcher text))
     (if (. m find) (. (. m group 1) replaceAll "&nbsp;" "") "")
-  (catch Exception e (prn e))))
+  (catch Exception e (println e))))
 
 (loop ()
-  (prn (new Date) ":" (get-quote))
+  (println (new Date) ":" (get-quote))
   (. Thread sleep 2000)
   (recur))
 ```
