@@ -14,20 +14,24 @@ class Environment {
 		this.outer = outer;
 	}
 
-	Object get(int code) throws NoSuchVariableException  {				
+	Object get(int code) throws Exception {
 		if (env.containsKey(code)) {
 			return env.get(code);
 		} else {
 			if (outer != null) {
 				return outer.get(code);
 			} else {
-				throw new NoSuchVariableException("Unable to resolve symbol: " + Symbol.symname.get(code));
+				try {
+					return Core.getClass(Symbol.symname.get(code));
+				} catch (ClassNotFoundException e) {
+					throw new Exception("Unable to resolve symbol: " + Symbol.symname.get(code));
+				}
 			}
 		}
 	}
 	
 	// change an existing variable
-	Object set(int code, Object v) throws Exception {		
+	Object set(int code, Object v) throws Exception {
 		if (env.containsKey(code)) {
 			env.put(code, v);
 			return v;
@@ -35,7 +39,7 @@ class Environment {
 			if (outer != null) {
 				return outer.set(code, v);
 			} else {
-				throw new NoSuchVariableException("Unable to resolve symbol: " + Symbol.symname.get(code));
+				throw new Exception("Unable to resolve symbol: " + Symbol.symname.get(code));
 			}
 		}
 	}	

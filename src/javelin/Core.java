@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.9.1";
+	public static final String VERSION = "0.9.2";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -384,15 +384,13 @@ public class Core {
 					try {
 						// get class
 						Class<?> cls;
-						Object obj = null;
-						try {
-							// object's method e.g. (. "abc" length)
-							obj = eval(expr.get(1), env);
-							cls = obj.getClass();
-						} catch (NoSuchVariableException e) {
+						Object obj = eval(expr.get(1), env);
+						if (obj instanceof Class<?>) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							String className = expr.get(1).toString();
-							cls = getClass(className);
+							cls = (Class<?>) obj;
+						} else {
+							// object's method e.g. (. "abc" length)
+							cls = obj.getClass();
 						}
 
 						Class<?>[] parameterTypes = new Class<?>[expr.size() - 3];
@@ -448,15 +446,13 @@ public class Core {
 					try {
 						// get class
 						Class<?> cls;
-						Object obj = null;
-						try {
-							// object's method e.g. (. "abc" length)
-							obj = eval(expr.get(1), env);
-							cls = obj.getClass();
-						} catch (NoSuchVariableException e) {
+						Object obj = eval(expr.get(1), env);
+						if (obj instanceof Class<?>) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							String className = expr.get(1).toString();
-							cls = getClass(className);
+							cls = (Class<?>) obj;
+						} else {
+							// object's method e.g. (. "abc" length)
+							cls = obj.getClass();
 						}
 
 						String fieldName = expr.get(2).toString();
@@ -473,15 +469,13 @@ public class Core {
 					try {
 						// get class
 						Class<?> cls;
-						Object obj = null;
-						try {
-							// object's method e.g. (. "abc" length)
-							obj = eval(expr.get(1), env);
-							cls = obj.getClass();
-						} catch (NoSuchVariableException e) {
+						Object obj = eval(expr.get(1), env);
+						if (obj instanceof Class<?>) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							String className = expr.get(1).toString();
-							cls = getClass(className);
+							cls = (Class<?>) obj;
+						} else {
+							// object's method e.g. (. "abc" length)
+							cls = obj.getClass();
 						}
 
 						String fieldName = expr.get(2).toString();
@@ -773,7 +767,7 @@ public class Core {
 	static HashMap<String, Class<?>> getClassCache = new HashMap<>();
 
 	// cached
-	private static Class<?> getClass(String className) throws ClassNotFoundException {
+	static Class<?> getClass(String className) throws ClassNotFoundException {
 		if (getClassCache.containsKey(className)) {
 			return getClassCache.get(className);
 		} else {
