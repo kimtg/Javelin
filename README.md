@@ -65,24 +65,8 @@ You can use all Java's data types.
 
 Literals:
 ```
-> 3
-3 : java.lang.Integer
-> 3L
-3 : java.lang.Long
-> 3.0
-3.0 : java.lang.Double
-> 3e3
-3000.0 : java.lang.Double
-> true
-true : java.lang.Boolean
-> false
-false : java.lang.Boolean
-> nil
-nil : nil
-> "string"
-"string" : java.lang.String
-> \a
-a : java.lang.Character
+> (map type '(3 3L 3.0 3e3 true false nil "string" \a))
+(java.lang.Integer java.lang.Long java.lang.Double java.lang.Double java.lang.Boolean java.lang.Boolean nil java.lang.String java.lang.Character)
 ```
 * Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \uNNNN as in Java. Octals are represented with \oNNN.
 * nil Means 'nothing/no-value'- represents Java null and tests logical false
@@ -91,14 +75,14 @@ a : java.lang.Character
 ### Special form ###
 ```
 > (let (a 1, b 2) (+ a b)) ; , is whitespace.
-3 : java.lang.Integer
+3
 > (doseq (x '(1 2 3)) (print x))
-123nil : nil
+123nil
 ; (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
 > (try (quot 1 0) (catch ArithmeticException e (println e) 3) (finally (println 4)))
 java.lang.ArithmeticException: / by zero
 4
-3 : java.lang.Integer
+3
 ```
 
 ### Function ###
@@ -110,7 +94,7 @@ Functions implement java.util.concurrent.Callable, java.java.lang.Runnable and j
 Callable
 ```
 > (. * call)
-1 : java.lang.Integer
+1
 ```
 
 Runnable
@@ -118,60 +102,60 @@ Runnable
 > (def t1 (new Thread (fn () (loop (i 1) (when (<= i 10) (print "" i) (recur (+ i 1)))))))
   (def t2 (new Thread (fn () (loop (i 11) (when (<= i 20) (print "" i) (recur (+ i 1)))))))
   (. t1 start) (. t2 start) (. t1 join) (. t2 join)
-  111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil : nil
+  111 12 2 13 3 14 4 15 5 16 6 17 7 18 8 19 9 20 10nil
 ```
 
 Comparator
 ```
 > (def a (list 3 2 1))
-(3 2 1) : java.util.ArrayList
+(3 2 1)
 > (. java.util.Collections sort a -)
-nil : nil
+nil
 > a
-(1 2 3) : java.util.ArrayList
+(1 2 3)
 ```
 
 ```
 > ((fn (x y) (+ x y)) 1 2)
-3 : java.lang.Integer
+3
 > ((fn (x) (* x 2)) 3)
-6 : java.lang.Integer
+6
 > (defn foo (x & more) (list x more)) ; variadic function
-#<function:[[x, &, more], [list, x, more]]> : javelin.UserFn
+#<function:[[x, &, more], [list, x, more]]>
 > (foo 1 2 3 4 5)
-(1 (2 3 4 5)) : java.util.ArrayList
+(1 (2 3 4 5))
 > (defn sum (x y) (+ x y))
-#<function:[[x, y], [+, x, y]]> : javelin.UserFn
+#<function:[[x, y], [+, x, y]]>
 > (sum 1 2)
-3 : java.lang.Integer
+3
 > (fold + '(1 2 3))
-6 : java.lang.Integer
+6
 > (defn even? (x) (== 0 (mod x 2)))
-#<function:[[x], [==, 0, [mod, x, 2]]]> : javelin.UserFn
+#<function:[[x], [==, 0, [mod, x, 2]]]>
 > (even? 3)
-false : java.lang.Boolean
+false
 > (even? 4)
-true : java.lang.Boolean
+true
 > (apply + (list 1 2 3))
-6 : java.lang.Integer
+6
 > (map (fn (x) (. Math sqrt x)) (list 1 2 3 4))
-(1.0 1.4142135623730951 1.7320508075688772 2.0) : java.util.ArrayList
+(1.0 1.4142135623730951 1.7320508075688772 2.0)
 > (filter even? (list 1 2 3 4 5))
-(2 4) : java.util.ArrayList
+(2 4)
 > (= "abc" "abc") ; Object.equals()
-true : java.lang.Boolean
+true
 > (def x 1)
   ((fn (x) (println x) (set! x 3) (println x)) 4) ; lexical scoping
   x
 4
 3
-1 : java.lang.Integer
+1
 > (defn adder (amount) (fn (x) (+ x amount))) ; lexical scoping
   (def add3 (adder 3))
   (add3 4)
-7 : java.lang.Integer
+7
 > (symbol "a")
-a : javelin.Core$Symbol
+a
 ```
 
 #### Recur
@@ -183,15 +167,15 @@ Warning: `recur` does not check the tail position.
 > (defn sum (n) (sum1 n 0))
 > (defn sum-nonrecur (n) (if (< n 1) 0 (+ n (sum-nonrecur (- n 1)))))
 > (sum 100)
-5050 : java.lang.Integer
+5050
 > (sum-nonrecur 100)
-5050 : java.lang.Integer
+5050
 > (sum 1000)
-500500 : java.lang.Integer
+500500
 > (sum-nonrecur 1000) ; stack overflow
 Exception in thread "main" java.lang.StackOverflowError
 > (loop (i 0) (when (< i 5) (print i) (recur (+ i 1))))
-01234nil : nil
+01234nil
 ```
 
 ### Scope ###
@@ -200,19 +184,19 @@ Exception in thread "main" java.lang.StackOverflowError
 ### List ###
 ```
 > (. (list 2 4 6) get 1)
-4 : java.lang.Integer
+4
 > ((list 2 4 6) 1) ; implicit indexing
-4 : java.lang.Integer
+4
 > (. (list 1 2 3) size)
-3 : java.lang.Integer
+3
 ```
 
 ### Array ###
 ```
 > (. java.lang.reflect.Array get (. "a b" split " ") 1)
-"b" : java.lang.String
+"b"
 > ((. "a b" split " ") 1) ; implicit indexing
-"b" : java.lang.String
+"b"
 ```
 
 ### Macro ###
@@ -220,49 +204,49 @@ Macro is non-hygienic.
 
 ```
 > (defmacro infix (a op & more) `(~op ~a ~@more))
-nil : nil
+nil
 > (infix 3 + 4)
-7 : java.lang.Integer
+7
 > (infix 3 + 4 5)
-12 : java.lang.Integer
+12
 > (macroexpand '(infix 3 + 4 5))
-(+  3 4 5) : java.util.ArrayList
+(+  3 4 5)
 > (macroexpand '(while true (println 1)))
-(loop () (if true (do (println 1) (recur)))) : java.util.ArrayList
+(loop () (if true (do (println 1) (recur))))
 ```
 
 ### Java interoperability (from Javelin) ###
 ```
 > (import) ; shows current import list. java.lang is imported by default. Classes are found in this order.
-("java.lang") : java.util.ArrayList
+("java.lang")
 > (import java.util)
-("java.lang" "java.util") : java.util.ArrayList
+("java.lang" "java.util")
 > (new Date)
-Tue Sep 22 14:33:28 KST 2015 : java.util.Date
+Tue Sep 22 14:33:28 KST 2015
 > (. Math random) ; class's static method.
-0.4780254852371699 : java.lang.Double
+0.4780254852371699
 > (. Math floor 1.5)
-1.0 : java.lang.Double
+1.0
 > (. "abc" length) ; object's method
-3 : java.lang.Integer
+3
 > (. true toString)
-true : java.lang.String
+true
 > (def i 3)
-3 : java.lang.Integer
+3
 > (. i doubleValue)
-3.0 : java.lang.Double
+3.0
 > (.get Math PI) ; get field
-3.141592653589793 : java.lang.Double
+3.141592653589793
 > (.get javelin.Core testField)(.get Core testField)
-nil : nil
+nil
 > (.set! javelin.Core testField 1) ; set field
   (.get javelin.Core testField)
-1 : java.lang.Integer
+1
 > (.set! javelin.Core testField "abc")
   (.get javelin.Core testField)
-abc : java.lang.String
+abc
 > (. (new java.math.BigInteger "2") pow 100) ; 2 ^ 100
-1267650600228229401496703205376 : java.math.BigInteger
+1267650600228229401496703205376
 ```
 
 #### Reify example

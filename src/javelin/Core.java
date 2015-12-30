@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.9";
+	public static final String VERSION = "0.9.1";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -141,11 +141,11 @@ public class Core {
 		return (ArrayList<Object>) value;
 	}
 
-	static String type(Object value) {
+	static Class<?> type(Object value) {
 		if (value == null)
-			return "nil";
+			return null;
 		else
-			return value.getClass().getName();
+			return value.getClass();
 	}
 	
 	static String toReadableString(Object value) {		
@@ -165,11 +165,8 @@ public class Core {
 			sb.append(")");
 			return sb.toString();
 		}
+		else if (value instanceof Class<?>) return ((Class<?>) value).getName();
 		else return value.toString();
-	}
-
-	static String strWithType(Object value) {
-		return toReadableString(value) + " : " + type(value);
 	}
 
 	static String escape(String value) {
@@ -841,7 +838,7 @@ public class Core {
 				} catch (EOFException e) {
 					break;
 				}
-				System.out.println(strWithType(preprocessEval(expr, globalEnv)));
+				System.out.println(toReadableString(preprocessEval(expr, globalEnv)));
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
