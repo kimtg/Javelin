@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.9.2";
+	public static final String VERSION = "0.10";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -51,6 +51,7 @@ public class Core {
 	static final Symbol sym_try = new Symbol("try");
 	static final Symbol sym_catch = new Symbol("catch");
 	static final Symbol sym_finally = new Symbol("finally");
+	static final Symbol sym_defmacro = new Symbol("defmacro");
 
 	public Core() throws Throwable {
 		set("+", new Builtin._plus());
@@ -252,7 +253,7 @@ public class Core {
 	static Object macroexpand(Object n) throws Throwable {
 		if (n instanceof ArrayList) {
 			ArrayList<Object> expr = Core.arrayListValue(n);
-			if (macros.containsKey(expr.get(0).toString())) {
+			if (expr.size() > 0 && macros.containsKey(expr.get(0).toString())) {
 				UserFn func = macros.get(expr.get(0).toString());
 
 				// build arguments
@@ -282,11 +283,7 @@ public class Core {
 				return n;
 			Object func = preprocess(expr.get(0));
 			if (func instanceof Symbol) {
-				if (func.toString().equals("defmacro")) {
-					// (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
-					macros.put(expr.get(1).toString(), new UserFn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
-					return null;
-				} else if (func.toString().equals("quote")) {
+				if (func.toString().equals("quote")) {
 					// skip quote
 					return n;
 				} else {
@@ -709,6 +706,11 @@ public class Core {
 					}
 					return ret;
 				}
+				else if (code == sym_defmacro.code) // (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
+				{
+					macros.put(expr.get(1).toString(), new UserFn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
+					return null;
+				}
 			}
 			// evaluate arguments
 			Object func = eval(expr.get(0), env);
@@ -791,30 +793,13 @@ public class Core {
 		}
 	}
 
-	ArrayList<Object> preprocessAll(ArrayList<Object> lst) throws Throwable {
-		ArrayList<Object> preprocessed = new ArrayList<Object>();
-		int last = lst.size() - 1;
-		for (int i = 0; i <= last; i++) {
-			preprocessed.add(preprocess(lst.get(i)));
-		}
-		return preprocessed;
-	}
-
-	Object evalAll(ArrayList<Object> lst) throws Throwable {
-		int last = lst.size() - 1;
-		if (last < 0)
-			return null;
-		Object ret = null;
-		for (int i = 0; i <= last; i++) {
-			ret = eval(lst.get(i), globalEnv);
-		}
-		return ret;
-	}
-
 	public Object evalString(String s) throws Throwable {
 		s = "(" + s + "\n)";
-		ArrayList<Object> preprocessed = preprocessAll(Core.arrayListValue(parse(new StringReader(s))));
-		return evalAll(preprocessed);
+		Object result = null;
+		for (Object o : Core.arrayListValue(parse(new StringReader(s))))  {
+			result = preprocessEval(o, globalEnv);
+		}
+		return result;
 	}
 
 	static void prompt() {
