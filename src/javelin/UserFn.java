@@ -12,7 +12,10 @@ class UserFn extends Fn { // anonymous function
 	}
 
 	public String toString() {
-		return "#<function:" + def.toString() + ">";
+		ArrayList<Object> d = new ArrayList<>();
+		d.add(Core.sym_fn);
+		d.addAll(def);
+		return Core.toReadableString(d);
 	}
 
 	@Override

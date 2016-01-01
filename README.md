@@ -121,17 +121,17 @@ nil
 > ((fn (x) (* x 2)) 3)
 6
 > (defn foo (x & more) (list x more)) ; variadic function
-#<function:[[x, &, more], [list, x, more]]>
+(fn (x & more) (list x more))
 > (foo 1 2 3 4 5)
 (1 (2 3 4 5))
 > (defn sum (x y) (+ x y))
-#<function:[[x, y], [+, x, y]]>
+(fn (x y) (+ x y))
 > (sum 1 2)
 3
 > (fold + '(1 2 3))
 6
 > (defn even? (x) (== 0 (mod x 2)))
-#<function:[[x], [==, 0, [mod, x, 2]]]>
+(fn (x) (== 0 (mod x 2)))
 > (even? 3)
 false
 > (even? 4)
