@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.10";
+	public static final String VERSION = "0.10.1";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -253,8 +253,11 @@ public class Core {
 	static Object macroexpand(Object n) throws Throwable {
 		if (n instanceof ArrayList) {
 			ArrayList<Object> expr = Core.arrayListValue(n);
-			if (expr.size() > 0 && macros.containsKey(expr.get(0).toString())) {
-				UserFn func = macros.get(expr.get(0).toString());
+			if (expr.size() == 0) return n;
+			Object prefix = expr.get(0);
+			if (prefix instanceof Symbol && prefix.toString().equals("quote")) return n;
+			if (prefix instanceof Symbol && macros.containsKey(prefix.toString())) {
+				UserFn func = macros.get(prefix.toString());
 
 				// build arguments
 				ArrayList<Object> args = new ArrayList<Object>();
@@ -267,30 +270,9 @@ public class Core {
 			} else {
 				ArrayList<Object> r = new ArrayList<Object>();
 				for (Object n2 : expr) {
-					r.add(preprocess(n2));
+					r.add(macroexpand(n2));
 				}
 				return r;
-			}
-		} else {
-			return n;
-		}
-	}
-
-	static Object preprocess(Object n) throws Throwable {
-		if (n instanceof ArrayList) { // function (FUNCTION ARGUMENT ...)
-			ArrayList<Object> expr = Core.arrayListValue(n);
-			if (expr.size() == 0)
-				return n;
-			Object func = preprocess(expr.get(0));
-			if (func instanceof Symbol) {
-				if (func.toString().equals("quote")) {
-					// skip quote
-					return n;
-				} else {
-					return macroexpand(n);
-				}
-			} else {
-				return macroexpand(n);
 			}
 		} else {
 			return n;
@@ -732,7 +714,7 @@ public class Core {
 			ArrayList<Object> arg2 = (ArrayList<Object>) arg;
 			Object head = arg2.get(0);
 			if (head instanceof Symbol && ((Symbol) head).toString().equals("unquote")) {
-				return preprocessEval(arg2.get(1), env);
+				return macroexpandEval(arg2.get(1), env);
 			}
 			ArrayList<Object> ret = new ArrayList<>();
 			for (Object a : arg2) {
@@ -744,9 +726,9 @@ public class Core {
 						if (head2 instanceof Symbol) {
 							String s = head2.toString();
 							if (s.equals("unquote")) {
-								ret.add(preprocessEval(a2.get(1), env));
+								ret.add(macroexpandEval(a2.get(1), env));
 							} else if (s.equals("unquote-splicing")) {
-								ret.addAll(Core.arrayListValue(preprocessEval(a2.get(1), env)));
+								ret.addAll(Core.arrayListValue(macroexpandEval(a2.get(1), env)));
 							} else {
 								ret.add(quasiquote(a, env));
 							}
@@ -797,7 +779,7 @@ public class Core {
 		s = "(" + s + "\n)";
 		Object result = null;
 		for (Object o : Core.arrayListValue(parse(new StringReader(s))))  {
-			result = preprocessEval(o, globalEnv);
+			result = macroexpandEval(o, globalEnv);
 		}
 		return result;
 	}
@@ -817,7 +799,7 @@ public class Core {
 				} catch (EOFException e) {
 					break;
 				}
-				System.out.println(toReadableString(preprocessEval(expr, globalEnv)));
+				System.out.println(toReadableString(macroexpandEval(expr, globalEnv)));
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
@@ -902,8 +884,8 @@ public class Core {
 		}
 	}
 
-	public static Object preprocessEval(Object object, Environment env) throws Throwable {
-		return eval(preprocess(object), env);
+	public static Object macroexpandEval(Object object, Environment env) throws Throwable {
+		return eval(macroexpand(object), env);
 	}
 
 	public static char peek(Reader r) throws IOException {

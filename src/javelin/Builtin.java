@@ -273,7 +273,7 @@ class Builtin {
 
 	static class eval extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
-			return Core.preprocessEval(args.get(0), Core.globalEnv);
+			return Core.macroexpandEval(args.get(0), Core.globalEnv);
 		}
 	}
 
