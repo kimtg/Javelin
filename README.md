@@ -13,13 +13,15 @@ On Unix, use *.sh files.
 Run `javelin.bat` or,
 ```
 Usage:
-java javelin.Core [OPTIONS...] [FILES...]
-java -cp javelin.jar javelin.Core [OPTIONS...] [FILES...]
-java -jar javelin.jar [OPTIONS...] [FILES...]
+java javelin.Core [OPTIONS...] [FILE] [ARGS...]
+java -cp javelin.jar javelin.Core [OPTIONS...] [FILE] [ARGS...]
+java -jar javelin.jar [OPTIONS...] [FILE] [ARGS...]
 
 OPTIONS:
     -h    print this screen.
     -v    print version.
+Operation:
+    Binds *command-line-args* to a list of strings containing command line args that appear after FILE.
 ```
 
 Run `DrJavelin.bat` to run a simple GUI REPL.

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.10.2";
+	public static final String VERSION = "0.10.3";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -861,11 +861,13 @@ public class Core {
 			return;
 		} else if (args.length == 1) {
 			if (args[0].equals("-h")) {
-				System.out.println("Usage: java javelin.Core [OPTIONS...] [FILES...]");
+				System.out.println("Usage: java javelin.Core [OPTIONS...] [FILE] [ARGS...]");
 				System.out.println();
 				System.out.println("OPTIONS:");
 				System.out.println("    -h    print this screen.");
 				System.out.println("    -v    print version.");
+				System.out.println("Operation:");
+				System.out.println("    Binds *command-line-args* to a list of strings containing command line args that appear after FILE.");
 				return;
 			} else if (args[0].equals("-v")) {
 				System.out.println(Core.VERSION);
@@ -873,14 +875,15 @@ public class Core {
 			}
 		}
 
-		// execute files, one by one
-		for (String fileName : args) {
-			Core p = new Core();
-			try {
-				p.evalString(Core.slurp(fileName, "UTF-8"));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		// execute the file
+		Core p = new Core();
+		List<String> argsList = new ArrayList<String>();
+		for (int i = 1; i < args.length; i++) argsList.add(args[i]);
+		p.set("*command-line-args*", argsList);
+		try {
+			p.evalString(Core.slurp(args[0], "UTF-8"));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
