@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.10.3";
+	public static final String VERSION = "0.10.4";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -238,7 +238,7 @@ public class Core {
 		printCollection(fields);
 
 		ArrayList<String> functions = new ArrayList<String>();
-		System.out.println("Functions:");
+		System.out.println("Defined symbols:");
 		for (int x : globalEnv.env.keySet()) {
 			functions.add(Symbol.symname.get(x));
 		}
@@ -855,19 +855,32 @@ public class Core {
 	public static void main(String[] args) throws Throwable {
 		if (args.length == 0) {
 			Core p = new Core();
+			List<String> argsList = new ArrayList<String>();
+			p.set("*command-line-args*", argsList);
 			printLogo();
 			p.repl();
 			System.out.println();
 			return;
-		} else if (args.length == 1) {
+		} else if (args.length >= 1) {
 			if (args[0].equals("-h")) {
-				System.out.println("Usage: java javelin.Core [OPTIONS...] [FILE] [ARGS...]");
+				System.out.println("Usage: java javelin.Core [OPTION] [ARGS...]");
 				System.out.println();
-				System.out.println("OPTIONS:");
+				System.out.println("Options:");
+				System.out.println("    FILE  run a script.");
 				System.out.println("    -h    print this screen.");
+				System.out.println("    -r    run a REPL.");
 				System.out.println("    -v    print version.");
 				System.out.println("Operation:");
 				System.out.println("    Binds *command-line-args* to a list of strings containing command line args that appear after FILE.");
+				return;
+			} else if (args[0].equals("-r")) {
+				Core p = new Core();
+				List<String> argsList = new ArrayList<String>();
+				for (int i = 1; i < args.length; i++) argsList.add(args[i]);
+				p.set("*command-line-args*", argsList);
+				printLogo();
+				p.repl();
+				System.out.println();
 				return;
 			} else if (args[0].equals("-v")) {
 				System.out.println(Core.VERSION);

@@ -13,12 +13,14 @@ On Unix, use *.sh files.
 Run `javelin.bat` or,
 ```
 Usage:
-java javelin.Core [OPTIONS...] [FILE] [ARGS...]
-java -cp javelin.jar javelin.Core [OPTIONS...] [FILE] [ARGS...]
-java -jar javelin.jar [OPTIONS...] [FILE] [ARGS...]
+java javelin.Core [OPTION] [ARGS...]
+java -cp javelin.jar javelin.Core [OPTION] [ARGS...]
+java -jar javelin.jar [OPTION] [ARGS...]
 
-OPTIONS:
+Options:
+    FILE  run a script.
     -h    print this screen.
+    -r    run a REPL.
     -v    print version.
 Operation:
     Binds *command-line-args* to a list of strings containing command line args that appear after FILE.
@@ -29,9 +31,9 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Special forms:
- . .get .set! and catch def do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
-Functions:
- * + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr print println prn quot read read-line read-string slurp spit str symbol type
+ . .get .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
+Defined symbols:
+ * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr print println prn quot read read-line read-string slurp spit str symbol type
 Macros:
  defn dotimes when while
 ```
