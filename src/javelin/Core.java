@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.11";
+	public static final String VERSION = "0.11.1";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -87,8 +87,9 @@ public class Core {
 		set("symbol", new Builtin.symbol());
 		set("macroexpand", new Builtin.macroexpand());
 		set("read", new Builtin.read());
+		set("load-string", new Builtin.load_string());
 
-		evalString(
+		load_string(
 				"(import java.lang)\n" +
 				"(defmacro defn (name & body) `(def ~name (fn ~@body)))\n" +
 				"(defmacro when (cond & body) `(if ~cond (do ~@body)))\n" +
@@ -100,7 +101,8 @@ public class Core {
 				"      (symbol (str \"G__\" (set! gs-counter (+ gs-counter 1)))))))\n" +
 				"(defmacro dotimes (binding & body)\n" +
 				"  (let (g (gensym), var (binding 0), limit (binding 1))\n" +
-				"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n"
+				"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n" +
+				"(defn load-file (file) (load-string (slurp file)))"
 				);
 	}
 
@@ -780,7 +782,7 @@ public class Core {
 		}
 	}
 
-	public Object evalString(String s) throws Throwable {
+	public static Object load_string(String s) throws Throwable {
 		s = "(" + s + "\n)";
 		Object result = null;
 		for (Object o : Core.arrayListValue(parse(new StringReader(s))))  {
@@ -898,11 +900,15 @@ public class Core {
 		List<String> argsList = new ArrayList<String>();
 		for (int i = 1; i < args.length; i++) argsList.add(args[i]);
 		p.set("*command-line-args*", argsList);
-		try {
-			p.evalString(Core.slurp(args[0], "UTF-8"));
+		try {			
+			p.load_file(args[0]);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public Object load_file(String file) throws IOException, Throwable {
+		return load_string(Core.slurp(file, "UTF-8"));
 	}
 
 	public static Object macroexpandEval(Object object, Environment env) throws Throwable {

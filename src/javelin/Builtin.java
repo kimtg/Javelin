@@ -445,7 +445,17 @@ class Builtin {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			switch (args.size()) {
 			case 0: return Core.parse(Core.defaultReader);
-			case 1: return Core.parse((Reader) args.get(1));
+			case 1: return Core.parse((Reader) args.get(0));
+			default: throw new IllegalArgumentException();
+			}
+		}
+	}
+	
+	// (load-string STRING)
+	static class load_string extends Fn {
+		public Object invoke(ArrayList<Object> args) throws Throwable {
+			switch (args.size()) {			
+			case 1: return Core.load_string((String) args.get(0));
 			default: throw new IllegalArgumentException();
 			}
 		}
