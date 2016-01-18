@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 class Builtin {
@@ -20,7 +21,7 @@ class Builtin {
 		}
 		return r;
 	}
-	
+
 	static class _plus extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			int len = args.size();
@@ -280,14 +281,15 @@ class Builtin {
 	static class fold extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object f = args.get(0);
-			ArrayList<Object> lst = Core.arrayListValue(args.get(1));
-			Object acc = lst.get(0);
+			Iterable<Object> iterable = Core.iterableValue(args.get(1));
+			Iterator<Object> iter = iterable.iterator();
+			Object acc = iter.next();
 			ArrayList<Object> args2 = new ArrayList<Object>(); // (ITEM1 ITEM2)
 			args2.add(null); // first argument
 			args2.add(null); // second argument
-			for (int i = 1; i < lst.size(); i++) {
+			while (iter.hasNext()) {
 				args2.set(0, acc);
-				args2.set(1, lst.get(i));
+				args2.set(1, iter.next());
 				acc = Core.apply(f, args2);
 			}
 			return acc;
@@ -297,11 +299,12 @@ class Builtin {
 	static class map extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object f = args.get(0);
-			ArrayList<Object> lst = Core.arrayListValue(args.get(1));
+			Iterable<Object> iterable = Core.iterableValue(args.get(1));
 			ArrayList<Object> acc = new ArrayList<Object>();
-			for (int i = 0; i < lst.size(); i++) {
-				ArrayList<Object> args2 = new ArrayList<Object>();
-				args2.add(lst.get(i));
+			ArrayList<Object> args2 = new ArrayList<Object>();
+			args2.add(null);
+			for (Object x : iterable) {
+				args2.set(0, x);
 				acc.add(Core.apply(f, args2));
 			}
 			return acc;
@@ -310,21 +313,31 @@ class Builtin {
 
 	static class apply extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
-			return Core.apply(args.get(0), Core.arrayListValue(args.get(1)));
+			Object args2 = args.get(1);
+			ArrayList<Object> argsList;
+			if (args2 instanceof ArrayList<?>) {
+				argsList = Core.arrayListValue(args2);
+			} else {
+				argsList = new ArrayList<Object>();
+				for (Object x : Core.iterableValue(args2)) {
+					argsList.add(x);
+				}
+			}
+			return Core.apply(args.get(0), argsList);
 		}
 	}
 
 	static class filter extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {
 			Object f = args.get(0);
-			ArrayList<Object> lst = Core.arrayListValue(args.get(1));
+			Iterable<Object> iterable = Core.iterableValue(args.get(1));
 			ArrayList<Object> acc = new ArrayList<Object>();
-			for (int i = 0; i < lst.size(); i++) {
-				ArrayList<Object> args2 = new ArrayList<Object>();
-				Object item = lst.get(i);
-				args2.add(item);
+			ArrayList<Object> args2 = new ArrayList<Object>();
+			args2.add(null);
+			for (Object x : iterable) {
+				args2.set(0, x);
 				Object ret = Core.apply(f, args2);
-				if (Core.booleanValue(ret)) acc.add(item);
+				if (Core.booleanValue(ret)) acc.add(x);
 			}
 			return acc;
 		}
@@ -426,7 +439,7 @@ class Builtin {
 			return Core.macroexpand(args.get(0));
 		}
 	}
-	
+
 	// (read [Reader])
 	static class read extends Fn {
 		public Object invoke(ArrayList<Object> args) throws Throwable {

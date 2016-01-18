@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public class Core {
-	public static final String VERSION = "0.10.4";
+	public static final String VERSION = "0.11";
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -142,14 +142,19 @@ public class Core {
 		return (ArrayList<Object>) value;
 	}
 
+	@SuppressWarnings("unchecked")
+	static Iterable<Object> iterableValue(Object value) {
+		return (Iterable<Object>) value;
+	}
+
 	static Class<?> type(Object value) {
 		if (value == null)
 			return null;
 		else
 			return value.getClass();
 	}
-	
-	static String toReadableString(Object value) {		
+
+	static String toReadableString(Object value) {
 		if (value == null) return "nil";
 		else if (value instanceof String) return "\"" + escape((String) value) + "\"";
 		else if (value instanceof List) {
@@ -162,7 +167,7 @@ public class Core {
 				}
 				sb.append(toReadableString(o));
 				first = false;
-			}			
+			}
 			sb.append(")");
 			return sb.toString();
 		}
@@ -179,7 +184,7 @@ public class Core {
 			case '\f': sb.append("\\f"); break;
 			case '\n': sb.append("\\n"); break;
 			case '\r': sb.append("\\r"); break;
-			case '\t': sb.append("\\t"); break;			
+			case '\t': sb.append("\\t"); break;
 			default: sb.append(c); break;
 			}
 		}
@@ -670,7 +675,7 @@ public class Core {
 									for (int j = 3; j < exprs.size(); j++) {
 										ret = eval(exprs.get(j), env2);
 									}
-									return ret;									
+									return ret;
 								}
 							}
 						}
@@ -807,7 +812,7 @@ public class Core {
 	}
 
 	// extracts characters from URL or filename
-	public static String slurp(String urlOrFileName, String charsetName) throws IOException {		
+	public static String slurp(String urlOrFileName, String charsetName) throws IOException {
 		InputStream is = null;
 		try {
 			// try URL
@@ -934,7 +939,7 @@ public class Core {
 				if (ws.indexOf(p) < 0) break;
 				r.read();
 			}
-			
+
 			p = peek(r);
 			if (prefix.indexOf(p) >= 0) { // prefix
 				c = (char) r.read();
