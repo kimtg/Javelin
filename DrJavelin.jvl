@@ -19,7 +19,7 @@
 
 (def text (new TextArea 20 80))
 (def textf (new TextField))
-(def button (new Button "Eval"))
+(def button (new JButton "Eval"))
 
 (defn eval-string (code)
 	(eval (read-string (str "(do " code "\n)"))))
@@ -33,7 +33,7 @@
 		(eval-code (. text getText)))))
 
 (defn eval-print (code)
-  (prn ">" code)
+  (println ">" code)
 	(prn (eval-code code)))
 
 (. textf addActionListener
