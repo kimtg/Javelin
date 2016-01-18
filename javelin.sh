@@ -1,2 +1,2 @@
 #!/bin/sh
-java -cp bin javelin.Core "$@"
+java -cp javelin.jar javelin.Core "$@"
