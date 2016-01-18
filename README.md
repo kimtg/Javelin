@@ -33,7 +33,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 Special forms:
  . .get .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Defined symbols:
- * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list macroexpand map mod nil? not not= pr print println prn quot read read-line read-string slurp spit str symbol type
+ * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= pr print println prn quot read read-line read-string slurp spit str symbol type
 Macros:
  defn dotimes when while
 ```
