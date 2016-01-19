@@ -25,7 +25,7 @@
 	(eval (read-string (str "(do " code "\n)"))))
 
 (defn eval-code (code)
-	(str (eval-string code)))
+	(eval-string code))
 
 (. button addActionListener
 	(reify ActionListener
