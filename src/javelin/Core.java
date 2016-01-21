@@ -26,8 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
 
-public class Core {
-	public static final String VERSION = "0.11.1";
+public final class Core {
+	public static final String VERSION = "0.12";
+
+	// no instance
+	private Core() {
+		
+	}
+	
 	static BufferedReader defaultReader = new BufferedReader(new InputStreamReader(System.in));
 	static final Symbol sym_set_e = new Symbol("set!");
 	static final Symbol sym_def = new Symbol("def");
@@ -53,7 +59,12 @@ public class Core {
 	static final Symbol sym_finally = new Symbol("finally");
 	static final Symbol sym_defmacro = new Symbol("defmacro");
 
-	public Core() throws Throwable {
+	static Environment globalEnv = new Environment(); // variables. compile-time
+	static ArrayList<String> imports = new ArrayList<String>();
+	static HashMap<String, UserFn> macros = new HashMap<>();
+	public static Object testField;
+	
+	static {
 		set("+", new Builtin._plus());
 		set("-", new Builtin._minus());
 		set("*", new Builtin._star());
@@ -89,21 +100,26 @@ public class Core {
 		set("read", new Builtin.read());
 		set("load-string", new Builtin.load_string());
 
-		load_string(
-				"(import java.lang)\n" +
-				"(defmacro defn (name & body) `(def ~name (fn ~@body)))\n" +
-				"(defmacro when (cond & body) `(if ~cond (do ~@body)))\n" +
-				"(defn nil? (x) (= nil x))\n" +
-				"(defmacro while (test & body) `(loop () (when ~test ~@body (recur))))\n" +
-				"(def gensym\n"+
-				"  (let (gs-counter 0)\n" +
-				"    (fn ()\n" +
-				"      (symbol (str \"G__\" (set! gs-counter (+ gs-counter 1)))))))\n" +
-				"(defmacro dotimes (binding & body)\n" +
-				"  (let (g (gensym), var (binding 0), limit (binding 1))\n" +
-				"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n" +
-				"(defn load-file (file) (load-string (slurp file)))"
-				);
+		try {
+			load_string(
+					"(import java.lang)\n" +
+					"(defmacro defn (name & body) `(def ~name (fn ~@body)))\n" +
+					"(defmacro when (cond & body) `(if ~cond (do ~@body)))\n" +
+					"(defn nil? (x) (= nil x))\n" +
+					"(defmacro while (test & body) `(loop () (when ~test ~@body (recur))))\n" +
+					"(def gensym\n"+
+					"  (let (gs-counter 0)\n" +
+					"    (fn ()\n" +
+					"      (symbol (str \"G__\" (set! gs-counter (+ gs-counter 1)))))))\n" +
+					"(defmacro dotimes (binding & body)\n" +
+					"  (let (g (gensym), var (binding 0), limit (binding 1))\n" +
+					"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n" +
+					"(defn load-file (file) (load-string (slurp file)))"
+					);
+		} catch (Throwable e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
 	}
 
 	static int intValue(Object value) {
@@ -218,9 +234,6 @@ public class Core {
 		}
 	}
 
-	static Environment globalEnv = new Environment(); // variables. compile-time
-	static ArrayList<String> imports = new ArrayList<String>();
-
 	static void printCollection(Collection<String> coll) {
 		for (String key : new TreeSet<String>(coll)) {
 			System.out.print(" " + key);
@@ -254,8 +267,6 @@ public class Core {
 		System.out.println("Macros:");
 		printCollection(macros.keySet());
 	}
-
-	static HashMap<String, UserFn> macros = new HashMap<>();
 
 	static Object macroexpand(Object n) throws Throwable {
 		if (n instanceof ArrayList) {
@@ -796,7 +807,7 @@ public class Core {
 	}
 
 	// read-eval-print loop
-	public void repl() {
+	public static void repl() {
 		while (true) {
 			try {
 				prompt();
@@ -848,24 +859,21 @@ public class Core {
 	}
 
 	// for embedding
-	public Object get(String s) throws Exception {
+	public static Object get(String s) throws Exception {
 		return globalEnv.get(Symbol.toCode(s));
 	}
 
 	// for embedding
-	public Object set(String s, Object o) {
+	public static Object set(String s, Object o) {
 		return globalEnv.def(Symbol.toCode(s), o);
 	}
 
-	public static Object testField;
-
 	public static void main(String[] args) throws Throwable {
 		if (args.length == 0) {
-			Core p = new Core();
 			List<String> argsList = new ArrayList<String>();
-			p.set("*command-line-args*", argsList);
+			set("*command-line-args*", argsList);
 			printLogo();
-			p.repl();
+			repl();
 			System.out.println();
 			return;
 		} else if (args.length >= 1) {
@@ -881,12 +889,11 @@ public class Core {
 				System.out.println("    Binds *command-line-args* to a list of strings containing command line args that appear after FILE.");
 				return;
 			} else if (args[0].equals("-r")) {
-				Core p = new Core();
 				List<String> argsList = new ArrayList<String>();
 				for (int i = 1; i < args.length; i++) argsList.add(args[i]);
-				p.set("*command-line-args*", argsList);
+				set("*command-line-args*", argsList);
 				printLogo();
-				p.repl();
+				repl();
 				System.out.println();
 				return;
 			} else if (args[0].equals("-v")) {
@@ -896,18 +903,17 @@ public class Core {
 		}
 
 		// execute the file
-		Core p = new Core();
 		List<String> argsList = new ArrayList<String>();
 		for (int i = 1; i < args.length; i++) argsList.add(args[i]);
-		p.set("*command-line-args*", argsList);
+		set("*command-line-args*", argsList);
 		try {			
-			p.load_file(args[0]);
+			load_file(args[0]);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public Object load_file(String file) throws IOException, Throwable {
+	public static Object load_file(String file) throws IOException, Throwable {
 		return load_string(Core.slurp(file, "UTF-8"));
 	}
 

@@ -1,7 +1,5 @@
 # The Javelin Programming Language
 
-(C) 2015 KIM Taegyoon
-
 Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal Lisp for the Java Virtual Machine).
 
 ## Compile ##
@@ -271,7 +269,6 @@ abc
 
 #### KOSPI200 Ticker
 ```
-; KOSPI200 Ticker (C) 2015 KIM Taegyoon
 (import java.util)
 
 (def p (. regex.Pattern compile "KOSPI200.*>(.+)</font>"))
@@ -307,20 +304,19 @@ InteropTest.java
 public class InteropTest {
     public static Object testField;
     public static void main(String[] args) {
-        javelin.Core j = new javelin.Core();
         Player pl = new Player();
 
         // Method 1: using class's field
         testField = pl;
-        j.evalString("(def pl (.get InteropTest testField))");
-        j.evalString("(. pl setLife 100)");
-        System.out.println(j.evalString("(. pl getLife)"));
+        javelin.Core.load_string("(def pl (.get InteropTest testField))");
+        javelin.Core.load_string("(. pl setLife 100)");
+        System.out.println(javelin.Core.load_string("(. pl getLife)"));
 
         // Method 2: not using class's field, set variable to Java's local variable
-        j.set("p12", pl); // set
-        Player pl2 = j.get("pl2"); // get
-        j.evalString("(. pl2 setLife 200)");
-        System.out.println(j.evalString("(. pl2 getLife)"));
+        javelin.Core.set("p12", pl); // set
+        Player pl2 = javelin.Core.get("pl2"); // get
+        javelin.Core.load_string("(. pl2 setLife 200)");
+        System.out.println(javelin.Core.load_string("(. pl2 getLife)"));
     }
 }
 
@@ -330,7 +326,7 @@ See the source code for details.
 
 ## License ##
 
-   Copyright 2015 KIM Taegyoon
+   Copyright 2015-2016 KIM Taegyoon
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
