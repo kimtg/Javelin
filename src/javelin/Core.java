@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public final class Core {
-	public static final String VERSION = "0.12.1";
+	public static final String VERSION = "0.12.2";
 
 	// no instance
 	private Core() {
@@ -114,7 +114,8 @@ public final class Core {
 					"(defmacro dotimes (binding & body)\n" +
 					"  (let (g (gensym), var (binding 0), limit (binding 1))\n" +
 					"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n" +
-					"(defn load-file (file) (load-string (slurp file)))"
+					"(defn load-file (file) (load-string (slurp file)))\n" +
+					"(defn range (& args)\n  (let (size (. args size))\n    (if (== 0 size) (range 0 (/ 1 0) 1)\n      (if (== 1 size) (range 0 (args 0) 1)\n        (if (== 2 size) (range (args 0) (args 1) 1)\n          (let (start (args 0)\n                end (args 1)\n                step (args 2))\n            (reify java.lang.Iterable\n              (iterator (this)\n                (let (x start)\n                  (reify java.util.Iterator\n                    (hasNext (this)\n                      (< x end))\n                    (next (this)\n                      (let (cur x)\n                        (set! x (+ x step))\n                        cur)))))\n              (toString (this) (str (list 'range start end step))))))))))\n"
 					);
 		} catch (Throwable e) {
 			// TODO Auto-generated catch block

@@ -31,7 +31,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 Special forms:
  . .get .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Defined symbols:
- * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= pr print println prn quot read read-line read-string slurp spit str symbol type
+ * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= pr print println prn quot range read read-line read-string slurp spit str symbol type
 Macros:
  defn dotimes when while
 ```
@@ -158,6 +158,13 @@ true
 7
 > (symbol "a")
 a
+```
+
+#### Iterable
+apply, doseq, filter, fold, map work on java.lang.Iterable.
+```
+> (apply + (filter (fn (x) (or (== 0 (mod x 3)) (== 0 (mod x 5)))) (range 1 1000)))
+233168
 ```
 
 #### Recur
