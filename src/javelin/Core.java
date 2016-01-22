@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 public final class Core {
-	public static final String VERSION = "0.12";
+	public static final String VERSION = "0.12.1";
 
 	// no instance
 	private Core() {
@@ -614,7 +614,7 @@ public final class Core {
 						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 							ArrayList<Object> args2 = new ArrayList<Object>();
 							args2.add(this);
-							args2.addAll(Arrays.asList(args));
+							if (args != null) args2.addAll(Arrays.asList(args));
 							return apply(methods.get(method.getName()), args2);
 						}
 					}
