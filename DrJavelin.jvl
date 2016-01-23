@@ -121,3 +121,4 @@
 (. frame add panel (.get BorderLayout SOUTH))
 (. frame pack)
 (. frame setVisible true)
+(. text requestFocus)
