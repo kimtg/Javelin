@@ -1,6 +1,6 @@
 # The Javelin Programming Language
 
-Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal Lisp for the Java Virtual Machine).
+Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal Lisp for the Java Virtual Machine). It uses Clojure-like syntax.
 
 ## Compile ##
 Run `compile.bat`. This script makes a runnable JAR file.
@@ -31,7 +31,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 Special forms:
  . .get .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Defined symbols:
- * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= pr print println prn quot range read read-line read-string slurp spit str symbol type
+ * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= nth pr print println prn quot range read read-line read-string slurp spit str symbol type
 Macros:
  defn dotimes when while
 ```
@@ -67,8 +67,8 @@ You can use all Java's data types.
 
 Literals:
 ```
-> (map type '(3 3L 3.0 3e3 true false nil "string" \a))
-(java.lang.Integer java.lang.Long java.lang.Double java.lang.Double java.lang.Boolean java.lang.Boolean nil java.lang.String java.lang.Character)
+> (map type '(3 3L 3.0 3e3 true false nil "string" #"regex" \a :a))
+(java.lang.Integer java.lang.Long java.lang.Double java.lang.Double java.lang.Boolean java.lang.Boolean nil java.lang.String java.util.regex.Pattern java.lang.Character javelin.Keyword)
 ```
 * Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \uNNNN as in Java. Octals are represented with \oNNN.
 * nil Means 'nothing/no-value'- represents Java null and tests logical false
@@ -76,7 +76,7 @@ Literals:
 
 ### Special form ###
 ```
-> (let (a 1, b 2) (+ a b)) ; , is whitespace.
+> (let (a 1, b 2) (+ a b)) ; , is whitespace. () and [] are interchangeable in special forms.
 3
 > (doseq (x '(1 2 3)) (print x))
 123nil
@@ -226,10 +226,10 @@ nil
 
 ### Java interoperability (from Javelin) ###
 ```
-> (import) ; shows current import list. java.lang is imported by default. Classes are found in this order.
-("java.lang")
-> (import java.util)
-("java.lang" "java.util")
+> (import java.util) ; java.lang is imported by default.
+nil
+> (import java.util.Date) ; Clojure syntax
+java.util.Date
 > (new Date)
 Tue Sep 22 14:33:28 KST 2015
 > (. Math random) ; class's static method.
@@ -276,17 +276,16 @@ abc
 
 #### KOSPI200 Ticker
 ```
-(import java.util)
+(import (java.util Date))
 
-(def p (. regex.Pattern compile "KOSPI200.*>(.+)</font>"))
-(defn get-quote ()
+(defn get-quote []
   (try
-    (def text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html" "euc-kr"))
-    (def m (. p matcher text))
-    (if (. m find) (. (. m group 1) replaceAll "&nbsp;" "") "")
-  (catch Exception e (println e))))
+    (let [text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html" :encoding "euc-kr")
+          m (. #"KOSPI200.*>(.+)</font>" matcher text)]
+      (if (. m find) (. (. m group 1) replaceAll "&nbsp;" "") ""))
+    (catch Exception e (println e))))
 
-(loop ()
+(loop []
   (println (new Date) ":" (get-quote))
   (. Thread sleep 2000)
   (recur))

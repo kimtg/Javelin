@@ -25,9 +25,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.Vector;
+import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.12.3";
+	public static final String VERSION = "0.13";
 
 	// no instance
 	private Core() {
@@ -62,6 +64,8 @@ public final class Core {
 	static Environment globalEnv = new Environment(); // variables. compile-time
 	static ArrayList<String> imports = new ArrayList<String>();
 	static HashMap<String, UserFn> macros = new HashMap<>();
+	static HashMap<String, Class<?>> getClassCache = new HashMap<>();
+	
 	public static Object testField;
 	
 	static {
@@ -99,6 +103,7 @@ public final class Core {
 		set("macroexpand", new Builtin.macroexpand());
 		set("read", new Builtin.read());
 		set("load-string", new Builtin.load_string());
+		set("nth", new Builtin.nth());
 
 		try {
 			load_string(
@@ -157,8 +162,8 @@ public final class Core {
 	}
 
 	@SuppressWarnings("unchecked")
-	static ArrayList<Object> arrayListValue(Object value) {
-		return (ArrayList<Object>) value;
+	static List<Object> listValue(Object value) {
+		return (List<Object>) value;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -176,9 +181,15 @@ public final class Core {
 	static String toReadableString(Object value) {
 		if (value == null) return "nil";
 		else if (value instanceof String) return "\"" + escape((String) value) + "\"";
+		else if (value instanceof Pattern) return "#\"" + escape(((Pattern) value).pattern()) + "\"";
 		else if (value instanceof List) {
+			String openParen = "(", closeParen = ")";
+			if (value instanceof Vector) {
+				openParen = "[";
+				closeParen = "]";
+			}
 			StringBuilder sb = new StringBuilder();
-			sb.append("(");
+			sb.append(openParen);
 			boolean first = true;
 			for (Object o : (List<?>) value) {
 				if (!first) {
@@ -187,7 +198,7 @@ public final class Core {
 				sb.append(toReadableString(o));
 				first = false;
 			}
-			sb.append(")");
+			sb.append(closeParen);
 			return sb.toString();
 		}
 		else if (value instanceof Class<?>) return ((Class<?>) value).getName();
@@ -218,7 +229,7 @@ public final class Core {
 		return (Symbol) value;
 	}
 
-	static Object apply(Object func, ArrayList<Object> args) throws Throwable {
+	static Object apply(Object func, List<Object> args) throws Throwable {
 		if (func instanceof Fn) {
 			return ((Fn) func).invoke(args);
 		} else {
@@ -271,7 +282,7 @@ public final class Core {
 
 	static Object macroexpand(Object n) throws Throwable {
 		if (n instanceof ArrayList) {
-			ArrayList<Object> expr = Core.arrayListValue(n);
+			List<Object> expr = Core.listValue(n);
 			if (expr.size() == 0) return n;
 			Object prefix = expr.get(0);
 			if (prefix instanceof Symbol && prefix.toString().equals("quote")) return n;
@@ -302,9 +313,15 @@ public final class Core {
 		if (n instanceof Symbol) {
 			Object r = env.get(((Symbol) n).code);
 			return r;
+		} else if (n instanceof Vector) {
+			Vector<Object> r = new Vector<Object>();
+			for (Object x : (Vector<?>) n) {
+				r.add(eval(x, env));
+			}
+			return r;
 		} else if (n instanceof ArrayList) { // function (FUNCTION
 													// ARGUMENT ...)
-			ArrayList<Object> expr = Core.arrayListValue(n);
+			List<Object> expr = Core.listValue(n);
 			if (expr.size() == 0)
 				return null;
 			Object e0 = expr.get(0);
@@ -319,13 +336,13 @@ public final class Core {
 					}
 					return value;
 				}
-				else if (code == sym_def.code) { // (def SYMBOL VALUE ...) ; set in the current
+				else if (code == sym_def.code) { // (def SYMBOL VALUE ...) ; set in the global
 							// environment
 					Object ret = null;
 					int len = expr.size();
 					for (int i = 1; i < len; i += 2) {
 						Object value = eval(expr.get(i + 1), env);
-						ret = env.def(((Symbol) expr.get(i)).code, value);
+						ret = globalEnv.def(((Symbol) expr.get(i)).code, value);
 					}
 					return ret;
 				}
@@ -542,9 +559,9 @@ public final class Core {
 				else if (code == sym_doseq.code) // (doseq (VAR SEQ) EXPR ...)
 				{
 					Environment env2 = new Environment(env);
-					int varCode = Core.symbolValue(Core.arrayListValue(expr.get(1)).get(0)).code;
+					int varCode = Core.symbolValue(Core.listValue(expr.get(1)).get(0)).code;
 					@SuppressWarnings("rawtypes")
-					Iterable seq = (Iterable) eval(Core.arrayListValue(expr.get(1)).get(1), env);
+					Iterable seq = (Iterable) eval(Core.listValue(expr.get(1)).get(1), env);
 					int len = expr.size();
 					for (Object x : seq) {
 						env2.def(varCode, (Object) x);
@@ -557,7 +574,7 @@ public final class Core {
 				else if (code == sym_let.code) // (let (VAR VALUE ...) BODY ...)
 				{
 					Environment env2 = new Environment(env);
-					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
+					List<Object> bindings = Core.listValue(expr.get(1));
 					for (int i = 0; i < bindings.size(); i+= 2) {
 						env2.def(Core.symbolValue(bindings.get(i)).code, eval(bindings.get(i + 1), env2));
 					}
@@ -567,13 +584,32 @@ public final class Core {
 					}
 					return ret;
 				}
-				else if (code == sym_import.code) // (import CLASS-PREFIX ...)
+				else if (code == sym_import.code) // (import & import-symbols-or-lists-or-prefixes)
 				{
+					Class<?> lastImport = null;
 					for (int i = 1; i < expr.size(); i++) {
-						String s = expr.get(i).toString();
-						if (!imports.contains(s)) imports.add(s);
+						Object x = expr.get(i);
+						if (x instanceof Symbol) { // e.g. java.util.Date
+							String s = x.toString();
+							try {								
+								lastImport = getClass(s);
+								getClassCache.put(lastImport.getSimpleName(), lastImport);
+							} catch (ClassNotFoundException cnfe) {
+								if (!imports.contains(s)) imports.add(s);
+							}
+						} else if (x instanceof List) { // e.g. (java.util Date ArrayList)
+							List<Object> xl = listValue(x);
+							String prefix = xl.get(0).toString();
+							for (int j = 1; j < xl.size(); j++) {
+								String s = xl.get(j).toString();
+								lastImport = getClass(prefix + "." + s);
+								getClassCache.put(s, lastImport);
+							}
+						} else {
+							throw new RuntimeException("Syntax error");
+						}
 					}
-					return imports;
+					return lastImport;
 				}
 				else if (code == sym_reify.code) // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
 				{
@@ -634,7 +670,7 @@ public final class Core {
 				else if (code == sym_loop.code) // (loop (VAR VALUE ...) BODY ...)
 				{
 					// separate formal and actual parameters
-					ArrayList<Object> bindings = Core.arrayListValue(expr.get(1));
+					List<Object> bindings = Core.listValue(expr.get(1));
 					ArrayList<Object> formalParams = new ArrayList<Object>();
 					ArrayList<Object> actualParams = new ArrayList<Object>();
 					Environment env2 = new Environment(env);
@@ -747,7 +783,7 @@ public final class Core {
 							if (s.equals("unquote")) {
 								ret.add(macroexpandEval(a2.get(1), env));
 							} else if (s.equals("unquote-splicing")) {
-								ret.addAll(Core.arrayListValue(macroexpandEval(a2.get(1), env)));
+								ret.addAll(Core.listValue(macroexpandEval(a2.get(1), env)));
 							} else {
 								ret.add(quasiquote(a, env));
 							}
@@ -766,8 +802,6 @@ public final class Core {
 			return arg;
 		}
 	}
-
-	static HashMap<String, Class<?>> getClassCache = new HashMap<>();
 
 	// cached
 	static Class<?> getClass(String className) throws ClassNotFoundException {
@@ -797,7 +831,7 @@ public final class Core {
 	public static Object load_string(String s) throws Throwable {
 		s = "(" + s + "\n)";
 		Object result = null;
-		for (Object o : Core.arrayListValue(parse(new StringReader(s))))  {
+		for (Object o : Core.listValue(parse(new StringReader(s))))  {
 			result = macroexpandEval(o, globalEnv);
 		}
 		return result;
@@ -938,11 +972,10 @@ public final class Core {
 
 	public static String readToken(Reader r) throws IOException {
 		final String ws = " \t\r\n,";
-		final String delim = "() \t\r\n,;";
-		final String prefix = "()'`";
+		final String delim = "()[] \t\r\n,;\"";
+		final String prefix = "()[]'`\"#";
 
-		while (true) {
-			StringBuilder acc = new StringBuilder(); // accumulator
+		while (true) {			
 			char c, p;
 
 			// skip whitespaces
@@ -955,40 +988,53 @@ public final class Core {
 
 			p = peek(r);
 			if (prefix.indexOf(p) >= 0) { // prefix
-				c = (char) r.read();
-				return "" + c;
+				StringBuilder acc = new StringBuilder(); // accumulator
+				if (p == '#') {
+					r.read();
+					acc.append(p);
+					p = peek(r);
+				}
+				if (p == '"') { // string
+					r.read();
+					acc.append(p);					
+					while (!eof(r)) {
+						c = (char) r.read();
+						if (c == '"') {
+							break;
+						}
+						if (c == '\\') { // escape
+							char next = (char) r.read();
+							if (next == 'r')
+								next = '\r';
+							else if (next == 'n')
+								next = '\n';
+							else if (next == 't')
+								next = '\t';
+							else if (next == 'b')
+								next = '\b';
+							else if (next == 'f')
+								next = '\f';
+							else if (next == '\\')
+								next = '\\';							
+							else
+								acc.append('\\'); // Unsupported escape character: do not escape
+							acc.append(next);
+						} else {
+							acc.append(c);
+						}
+					}
+					return acc.toString();
+				} else {				
+					c = (char) r.read();
+					return "" + c;
+				}
 			} else if (p == '~') { // unquote
+				StringBuilder acc = new StringBuilder(); // accumulator
 				c = (char) r.read();
 				acc.append(c);
 				if (peek(r) == '@') { // unquote-splicing
 					c = (char) r.read();
 					acc.append(c);
-				}
-				return acc.toString();
-			} else if (p == '"') { // string
-				acc.append(p);
-				r.read();
-				while (!eof(r)) {
-					c = (char) r.read();
-					if (c == '"') {
-						break;
-					}
-					if (c == '\\') { // escape
-						char next = (char) r.read();
-						if (next == 'r')
-							next = '\r';
-						else if (next == 'n')
-							next = '\n';
-						else if (next == 't')
-							next = '\t';
-						else if (next == 'b')
-							next = '\b';
-						else if (next == 'f')
-							next = '\f';
-						acc.append(next);
-					} else {
-						acc.append(c);
-					}
 				}
 				return acc.toString();
 			} else if (p == ';') { // end-of-line comment
@@ -997,6 +1043,7 @@ public final class Core {
 				}
 				continue;
 			} else { // other
+				StringBuilder acc = new StringBuilder(); // accumulator
 				// read until delim
 				while (!eof(r)) {
 					p = peek(r);
@@ -1017,6 +1064,8 @@ public final class Core {
 	public static Object parse(Reader r, String tok) throws IOException {
 		if (tok.charAt(0) == '"') { // double-quoted string
 			return tok.substring(1);
+		} else if (tok.charAt(0) == '#' && tok.charAt(1) == '"') { // regex
+			return Pattern.compile(tok.substring(2));
 		} else if (tok.equals("'")) { // quote
 			ArrayList<Object> ret = new ArrayList<Object>();
 			ret.add(new Symbol("quote"));
@@ -1039,6 +1088,8 @@ public final class Core {
 			return ret;
 		} else if (tok.equals("(")) { // list
 			return parseList(r);
+		} else if (tok.equals("[")) {
+			return parseVector(r);
 		} else if (tok.charAt(0) == '\\') { // char
 			// Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \\uNNNN as in Java. Octals are represented with \\oNNN.
 			if (tok.length() == 2) {
@@ -1082,6 +1133,9 @@ public final class Core {
 			case "false": return false;
 			case "nil": return null;
 			}
+			if (tok.startsWith(":")) { // keyword
+				return new Keyword(tok);
+			}
 			// normal symbol
 			return new Symbol(tok);
 		}
@@ -1100,4 +1154,18 @@ public final class Core {
 		}
 		return ret;
 	}
+	
+	private static Vector<Object> parseVector(Reader r) throws IOException {
+		Vector<Object> ret = new Vector<Object>();
+		while (!eof(r)) {
+			String tok = readToken(r);
+			if (tok.equals("]")) { // end of list
+				break;
+			} else {
+				Object o = parse(r, tok);
+				ret.add(o);
+			}
+		}
+		return ret;
+	}	
 }

@@ -1,31 +1,32 @@
 package javelin;
 
 import java.util.ArrayList;
+import java.util.List;
 
 class UserFn extends Fn { // anonymous function
-	ArrayList<Object> def; // definition
+	List<Object> def; // definition
 	Environment outer_env;
 
-	UserFn(ArrayList<Object> def, Environment outer_env) {
+	UserFn(List<Object> def, Environment outer_env) {
 		this.def = def;
 		this.outer_env = outer_env;
 	}
 
 	public String toString() {
-		ArrayList<Object> d = new ArrayList<>();
+		List<Object> d = new ArrayList<>();
 		d.add(Core.sym_fn);
 		d.addAll(def);
 		return Core.toReadableString(d);
 	}
 
 	@Override
-	public Object invoke(ArrayList<Object> args) throws Throwable {
+	public Object invoke(List<Object> args) throws Throwable {
 		// anonymous function application. lexical scoping
 		// ((ARGUMENT ...) BODY ...)
 		fnStart: while (true) {
 			Environment local_env = new Environment(this.outer_env);
 			@SuppressWarnings("unchecked")
-			ArrayList<Object> arg_syms = (ArrayList<Object>) this.def.get(0);
+			List<Object> arg_syms = (List<Object>) this.def.get(0);
 
 			int len = arg_syms.size();
 			for (int i = 0; i < len; i++) { // assign arguments

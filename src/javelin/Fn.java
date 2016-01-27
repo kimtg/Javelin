@@ -2,10 +2,11 @@ package javelin;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 class Fn implements Callable<Object>, Runnable, Comparator<Object> {
-	public Object invoke(ArrayList<Object> args) throws Throwable {
+	public Object invoke(List<Object> args) throws Throwable {
 		return null;
 	}
 
