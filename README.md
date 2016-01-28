@@ -43,7 +43,7 @@ Macros:
 ```
 
 ```
-(. javax.swing.JOptionPane showMessageDialog nil "Hello, World!") ; GUI Hello, World!
+(javax.swing.JOptionPane/showMessageDialog nil "Hello, World!") ; GUI Hello, World!
 ```
 
 ### Whitespace ###
