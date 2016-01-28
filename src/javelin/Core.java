@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13";
+	public static final String VERSION = "0.13.1";
 
 	// no instance
 	private Core() {
@@ -46,7 +46,6 @@ public final class Core {
 	static final Symbol sym_fn = new Symbol("fn");
 	static final Symbol sym_do = new Symbol("do");
 	static final Symbol sym__dot = new Symbol(".");
-	static final Symbol sym__dotset_e = new Symbol(".set!");
 	static final Symbol sym_new = new Symbol("new");
 	static final Symbol sym_doseq = new Symbol("doseq");
 	static final Symbol sym_let = new Symbol("let");
@@ -284,9 +283,36 @@ public final class Core {
 			List<Object> expr = Core.listValue(n);
 			if (expr.size() == 0) return n;
 			Object prefix = expr.get(0);
-			if (prefix instanceof Symbol && prefix.toString().equals("quote")) return n;
-			if (prefix instanceof Symbol && macros.containsKey(prefix.toString())) {
-				UserFn func = macros.get(prefix.toString());
+			String ps = prefix.toString();
+			if (prefix instanceof Symbol && ps.equals("quote")) return n;
+			if (prefix instanceof Symbol && ps.contains("/")) { // e.g. (Math/cos 0)
+				// (. Math cos 0)
+				int sepPos = ps.indexOf('/');
+				String head = ps.substring(0, sepPos);
+				String tail = ps.substring(sepPos + 1);
+				ArrayList<Object> newForm = new ArrayList<Object>();
+				newForm.add(sym__dot);
+				newForm.add(new Symbol(head));
+				newForm.add(new Symbol(tail));
+				for (int i = 1; i < expr.size(); i++) {
+					newForm.add(expr.get(i));
+				}
+				return newForm;
+			}
+			if (prefix instanceof Symbol && ps.startsWith(".")) { // e.g. (.length "abc")
+				// (. "abc" length)		
+				String tail = ps.substring(1);
+				ArrayList<Object> newForm = new ArrayList<Object>();
+				newForm.add(sym__dot);
+				newForm.add(expr.get(1));
+				newForm.add(new Symbol(tail));
+				for (int i = 2; i < expr.size(); i++) {
+					newForm.add(expr.get(i));
+				}
+				return newForm;
+			}			
+			if (prefix instanceof Symbol && macros.containsKey(ps)) {
+				UserFn func = macros.get(ps);
 
 				// build arguments
 				ArrayList<Object> args = new ArrayList<Object>();
@@ -303,9 +329,22 @@ public final class Core {
 				}
 				return r;
 			}
-		} else {
-			return n;
+		} else if (n instanceof Symbol) {
+			String ns = n.toString();
+			if (ns.contains("/")) { // e.g. Math/PI
+				// (. Math -PI)
+				int sepPos = ns.indexOf('/');
+				String head = ns.substring(0, sepPos);
+				String tail = ns.substring(sepPos + 1);
+				ArrayList<Object> newForm = new ArrayList<Object>();
+				newForm.add(sym__dot);
+				newForm.add(new Symbol(head));
+				newForm.add(new Symbol("-" + tail));
+				return newForm;
+			}
 		}
+		// no expansion
+		return n;
 	}
 
 	static Object eval(Object n, Environment env) throws Throwable {
@@ -339,13 +378,13 @@ public final class Core {
 							@SuppressWarnings("unchecked")
 							List<Object> dl = (ArrayList<Object>) dest;
 							// get class
-							Class<?> cls;
-							Object obj = eval(dl.get(1), env);
-							if (obj instanceof Class<?>) {
+							Class<?> cls = tryGetClass(dl.get(1).toString());
+							Object obj = null;
+							if (cls != null) {
 								// class's static method e.g. (. java.lang.Math floor 1.5)
-								cls = (Class<?>) obj;
 							} else {
 								// object's method e.g. (. "abc" length)
+								obj = eval(dl.get(1), env);
 								cls = obj.getClass();
 							}
 
@@ -421,16 +460,16 @@ public final class Core {
 					String methodName = expr.get(2).toString();
 					if (methodName.startsWith("-")) {
 						// Java interoperability
-						// (.get CLASS-OR-OBJECT FIELD) ; get Java field
+						// (. CLASS-OR-OBJECT -FIELD) ; get Java field
 						try {
 							// get class
-							Class<?> cls;
-							Object obj = eval(expr.get(1), env);
-							if (obj instanceof Class<?>) {
+							Class<?> cls = tryGetClass(expr.get(1).toString());
+							Object obj = null;
+							if (cls != null) {
 								// class's static method e.g. (. java.lang.Math floor 1.5)
-								cls = (Class<?>) obj;
 							} else {
 								// object's method e.g. (. "abc" length)
+								obj = eval(expr.get(1), env);
 								cls = obj.getClass();
 							}
 
@@ -446,13 +485,13 @@ public final class Core {
 					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
 					try {
 						// get class
-						Class<?> cls;
-						Object obj = eval(expr.get(1), env);
-						if (obj instanceof Class<?>) {
+						Class<?> cls = tryGetClass(expr.get(1).toString());
+						Object obj = null;
+						if (cls != null) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
-							cls = (Class<?>) obj;
 						} else {
 							// object's method e.g. (. "abc" length)
+							obj = eval(expr.get(1), env);
 							cls = obj.getClass();
 						}
 
@@ -498,31 +537,6 @@ public final class Core {
 							}
 						}
 						throw new IllegalArgumentException(expr.toString());
-					} catch (Exception e) {
-						e.printStackTrace();
-						return null;
-					}
-				}
-				else if (code == sym__dotset_e.code) {
-					// Java interoperability
-					// (.set! CLASS-OR-OBJECT FIELD VALUE) ; set Java field
-					try {
-						// get class
-						Class<?> cls;
-						Object obj = eval(expr.get(1), env);
-						if (obj instanceof Class<?>) {
-							// class's static method e.g. (. java.lang.Math floor 1.5)
-							cls = (Class<?>) obj;
-						} else {
-							// object's method e.g. (. "abc" length)
-							cls = obj.getClass();
-						}
-
-						String fieldName = expr.get(2).toString();
-						java.lang.reflect.Field field = cls.getField(fieldName);
-						Object value = eval(expr.get(3), env);
-						field.set(obj, value);
-						return null;
 					} catch (Exception e) {
 						e.printStackTrace();
 						return null;
@@ -850,6 +864,14 @@ public final class Core {
 				}
 				throw new ClassNotFoundException(className);
 			}
+		}
+	}
+	
+	static Class<?> tryGetClass(String className) {
+		try {
+			return getClass(className);
+		} catch (ClassNotFoundException e) {
+			return null;
 		}
 	}
 

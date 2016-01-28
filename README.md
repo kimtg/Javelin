@@ -232,11 +232,13 @@ nil
 java.util.Date
 > (new Date)
 Tue Sep 22 14:33:28 KST 2015
-> (. Math random) ; class's static method.
+> (. Math random) (Math/random) ; class's static method.
 0.4780254852371699
+0.21577491460068765
 > (. Math floor 1.5)
 1.0
-> (. "abc" length) ; object's method
+> (. "abc" length) (.length "abc") ; object's method
+3
 3
 > (. true toString)
 true
@@ -244,15 +246,16 @@ true
 3
 > (. i doubleValue)
 3.0
-> (. Math -PI) ; get field
+> (. Math -PI) Math/PI ; get field
+3.141592653589793
 3.141592653589793
 > (. javelin.Core -testField)
 nil
 > (set! (. javelin.Core -testField) 1) ; set field
   (. javelin.Core -testField)
 1
-> (set! (. javelin.Core -testField) "abc")
-  (. javelin.Core -testField)
+> (set! javelin.Core/testField "abc")
+  javelin.Core/testField
 abc
 > (. (new java.math.BigInteger "2") pow 100) ; 2 ^ 100
 1267650600228229401496703205376
