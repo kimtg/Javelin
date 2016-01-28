@@ -326,14 +326,39 @@ public final class Core {
 			Object e0 = expr.get(0);
 			if (e0 instanceof Symbol) {
 				final int code = ((Symbol) e0).code;
-				if (code == sym_set_e.code) { // (set! SYMBOL VALUE ...) ; set the SYMBOL's value
-					Object value = null;
-					int len = expr.size();
-					for (int i = 1; i < len; i += 2) {
-						value = eval(expr.get(i + 1), env);
-						env.set(((Symbol)expr.get(i)).code, value);
+				if (code == sym_set_e.code) { // (set! SYMBOL-OR-FIELD VALUE) ; set the SYMBOL-OR-FIELD's value
+					Object dest = expr.get(1);
+					if (dest instanceof Symbol) {
+						Object value = eval(expr.get(2), env);
+						env.set(((Symbol) dest).code, value);
+						return value;
+					} else { // field
+						// Java interoperability
+						// (set! (. CLASS-OR-OBJECT -FIELD) VALUE) ; set Java field
+						try {
+							@SuppressWarnings("unchecked")
+							List<Object> dl = (ArrayList<Object>) dest;
+							// get class
+							Class<?> cls;
+							Object obj = eval(dl.get(1), env);
+							if (obj instanceof Class<?>) {
+								// class's static method e.g. (. java.lang.Math floor 1.5)
+								cls = (Class<?>) obj;
+							} else {
+								// object's method e.g. (. "abc" length)
+								cls = obj.getClass();
+							}
+
+							String fieldName = dl.get(2).toString().substring(1);
+							java.lang.reflect.Field field = cls.getField(fieldName);
+							Object value = eval(expr.get(2), env);
+							field.set(obj, value);
+							return value;
+						} catch (Exception e) {
+							e.printStackTrace();
+							return null;
+						}
 					}
-					return value;
 				}
 				else if (code == sym_def.code) { // (def SYMBOL VALUE ...) ; set in the global
 							// environment

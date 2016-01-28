@@ -29,7 +29,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Special forms:
- . .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
+ . and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Defined symbols:
  * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= nth pr print println prn quot range read read-line read-string slurp spit str symbol type
 Macros:
@@ -246,12 +246,12 @@ true
 3.0
 > (. Math -PI) ; get field
 3.141592653589793
-> (. javelin.Core -testField)(. Core -testField)
+> (. javelin.Core -testField)
 nil
-> (.set! javelin.Core testField 1) ; set field
+> (set! (. javelin.Core -testField) 1) ; set field
   (. javelin.Core -testField)
 1
-> (.set! javelin.Core testField "abc")
+> (set! (. javelin.Core -testField) "abc")
   (. javelin.Core -testField)
 abc
 > (. (new java.math.BigInteger "2") pow 100) ; 2 ^ 100
