@@ -46,7 +46,6 @@ public final class Core {
 	static final Symbol sym_fn = new Symbol("fn");
 	static final Symbol sym_do = new Symbol("do");
 	static final Symbol sym__dot = new Symbol(".");
-	static final Symbol sym__dotget = new Symbol(".get");
 	static final Symbol sym__dotset_e = new Symbol(".set!");
 	static final Symbol sym_new = new Symbol("new");
 	static final Symbol sym_doseq = new Symbol("doseq");
@@ -394,6 +393,30 @@ public final class Core {
 					return eval(expr.get(last), env);
 				}
 				else if (code == sym__dot.code) {
+					String methodName = expr.get(2).toString();
+					if (methodName.startsWith("-")) {
+						// Java interoperability
+						// (.get CLASS-OR-OBJECT FIELD) ; get Java field
+						try {
+							// get class
+							Class<?> cls;
+							Object obj = eval(expr.get(1), env);
+							if (obj instanceof Class<?>) {
+								// class's static method e.g. (. java.lang.Math floor 1.5)
+								cls = (Class<?>) obj;
+							} else {
+								// object's method e.g. (. "abc" length)
+								cls = obj.getClass();
+							}
+
+							String fieldName = methodName.substring(1);
+							java.lang.reflect.Field field = cls.getField(fieldName);
+							return field.get(obj);
+						} catch (Exception e) {
+							e.printStackTrace();
+							return null;
+						}
+					}
 					// Java interoperability
 					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
 					try {
@@ -432,7 +455,7 @@ public final class Core {
 							}
 							parameterTypes[i - 3] = paramClass;
 						}
-						String methodName = expr.get(2).toString();
+						
 						try {
 							Method m = cls.getMethod(methodName, parameterTypes);
 							return m.invoke(obj, parameters.toArray());
@@ -450,29 +473,6 @@ public final class Core {
 							}
 						}
 						throw new IllegalArgumentException(expr.toString());
-					} catch (Exception e) {
-						e.printStackTrace();
-						return null;
-					}
-				}
-				else if (code == sym__dotget.code) {
-					// Java interoperability
-					// (.get CLASS-OR-OBJECT FIELD) ; get Java field
-					try {
-						// get class
-						Class<?> cls;
-						Object obj = eval(expr.get(1), env);
-						if (obj instanceof Class<?>) {
-							// class's static method e.g. (. java.lang.Math floor 1.5)
-							cls = (Class<?>) obj;
-						} else {
-							// object's method e.g. (. "abc" length)
-							cls = obj.getClass();
-						}
-
-						String fieldName = expr.get(2).toString();
-						java.lang.reflect.Field field = cls.getField(fieldName);
-						return field.get(obj);
 					} catch (Exception e) {
 						e.printStackTrace();
 						return null;

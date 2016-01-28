@@ -29,7 +29,7 @@ Run `DrJavelin.bat` to run a simple GUI REPL.
 ## Reference ##
 ```
 Special forms:
- . .get .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
+ . .set! and catch def defmacro do doseq finally fn if import let loop new or quasiquote quote recur reify set! try
 Defined symbols:
  * *command-line-args* + - / < <= = == > >= apply eval filter fold gensym list load-file load-string macroexpand map mod nil? not not= nth pr print println prn quot range read read-line read-string slurp spit str symbol type
 Macros:
@@ -244,15 +244,15 @@ true
 3
 > (. i doubleValue)
 3.0
-> (.get Math PI) ; get field
+> (. Math -PI) ; get field
 3.141592653589793
-> (.get javelin.Core testField)(.get Core testField)
+> (. javelin.Core -testField)(. Core -testField)
 nil
 > (.set! javelin.Core testField 1) ; set field
-  (.get javelin.Core testField)
+  (. javelin.Core -testField)
 1
 > (.set! javelin.Core testField "abc")
-  (.get javelin.Core testField)
+  (. javelin.Core -testField)
 abc
 > (. (new java.math.BigInteger "2") pow 100) ; 2 ^ 100
 1267650600228229401496703205376
@@ -268,8 +268,8 @@ abc
 	(reify java.awt.event.ActionListener
 	  (actionPerformed (this e)
 		(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
-(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
-(. frame add button (.get BorderLayout NORTH))
+(. frame setDefaultCloseOperation (. JFrame -EXIT_ON_CLOSE))
+(. frame add button (. BorderLayout -NORTH))
 (. frame pack)
 (. frame setVisible true)
 ```
@@ -314,7 +314,7 @@ public class InteropTest {
 
         // Method 1: using class's field
         testField = pl;
-        javelin.Core.load_string("(def pl (.get InteropTest testField))");
+        javelin.Core.load_string("(def pl (. InteropTest -testField))");
         javelin.Core.load_string("(. pl setLife 100)");
         System.out.println(javelin.Core.load_string("(. pl getLife)"));
 

@@ -79,7 +79,7 @@
 (. menuOpen addActionListener
 	(reify ActionListener
 	  (actionPerformed (this e)
-		(when (= (. fc showOpenDialog nil) (.get javax.swing.JFileChooser APPROVE_OPTION))
+		(when (= (. fc showOpenDialog nil) (. javax.swing.JFileChooser -APPROVE_OPTION))
 		  (let (fileName (. (. fc getSelectedFile) getCanonicalPath))
 				  (updateFileName fileName)
 				  (. text setText (slurp fileName)))))))
@@ -88,7 +88,7 @@
 	(spit fileName (. text getText)))
 
 (defn fileSaveAs ()
-	(when (= (. fc showSaveDialog nil) (.get javax.swing.JFileChooser APPROVE_OPTION))
+	(when (= (. fc showSaveDialog nil) (. javax.swing.JFileChooser -APPROVE_OPTION))
 	  (let (fileName (. (. fc getSelectedFile) getCanonicalPath))
 		(updateFileName fileName)
 		(fileSave fileName))))
@@ -110,15 +110,15 @@
 	  (actionPerformed (this e)
 		(. System exit 0))))
 
-(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
-(let (font (new Font "Monospaced" (.get Font PLAIN) 12))
+(. frame setDefaultCloseOperation (. JFrame -EXIT_ON_CLOSE))
+(let (font (new Font "Monospaced" (. Font -PLAIN) 12))
 	(. text setFont font)
 	(. textf setFont font))
-(. panel setLayout (new BoxLayout panel (.get BoxLayout PAGE_AXIS)))
-(. frame add button (.get BorderLayout NORTH))
+(. panel setLayout (new BoxLayout panel (. BoxLayout -PAGE_AXIS)))
+(. frame add button (. BorderLayout -NORTH))
 (. frame add text)
 (. panel add textf)
-(. frame add panel (.get BorderLayout SOUTH))
+(. frame add panel (. BorderLayout -SOUTH))
 (. frame pack)
 (. frame setVisible true)
 (. textf requestFocus)
