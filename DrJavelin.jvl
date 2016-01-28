@@ -1,6 +1,4 @@
 ; DrJavelin
-; (C) 2015 Kim, Taegyoon
-
 (import javax.swing java.awt java.awt.event java.io java.util)
 
 (def title "DrJavelin")

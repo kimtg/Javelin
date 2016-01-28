@@ -299,7 +299,7 @@ public final class Core {
 				}
 				return newForm;
 			}
-			if (prefix instanceof Symbol && ps.startsWith(".")) { // e.g. (.length "abc")
+			if (prefix instanceof Symbol && ps.length() >= 2 && ps.startsWith(".")) { // e.g. (.length "abc")
 				// (. "abc" length)		
 				String tail = ps.substring(1);
 				ArrayList<Object> newForm = new ArrayList<Object>();
