@@ -230,7 +230,8 @@ nil
 nil
 > (import java.util.Date) ; Clojure syntax
 java.util.Date
-> (new Date)
+> (new Date) (Date.)
+Tue Sep 22 14:33:28 KST 2015
 Tue Sep 22 14:33:28 KST 2015
 > (. Math random) (Math/random) ; class's static method.
 0.4780254852371699

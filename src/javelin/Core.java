@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.1";
+	public static final String VERSION = "0.13.2";
 
 	// no instance
 	private Core() {
@@ -102,7 +102,7 @@ public final class Core {
 		set("read", new Builtin.read());
 		set("load-string", new Builtin.load_string());
 		set("nth", new Builtin.nth());
-
+		
 		try {
 			load_string(
 					"(import java.lang)\n" +
@@ -119,11 +119,11 @@ public final class Core {
 					"    `(let (~g ~limit) (loop (~var 0) (when (< ~var ~g) ~@body (recur (+ ~var 1)))))))\n" +
 					"(defn load-file (file) (load-string (slurp file)))\n" +
 					"(defn range (& args)\n  (let (size (. args size))\n    (if (== 0 size) (range 0 (/ 1 0) 1)\n      (if (== 1 size) (range 0 (args 0) 1)\n        (if (== 2 size) (range (args 0) (args 1) 1)\n          (let (start (args 0)\n                end (args 1)\n                step (args 2))\n            (reify java.lang.Iterable\n              (iterator (this)\n                (let (x start)\n                  (reify java.util.Iterator\n                    (hasNext (this)\n                      (< x end))\n                    (next (this)\n                      (let (cur x)\n                        (set! x (+ x step))\n                        cur)))))\n              (toString (this) (str \"(range \" start \" \" end \" \" step \")\")))))))))\n"
-					);
+					);			
 		} catch (Throwable e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}		
+		}
 	}
 
 	static int intValue(Object value) {
@@ -307,6 +307,17 @@ public final class Core {
 				newForm.add(expr.get(1));
 				newForm.add(new Symbol(tail));
 				for (int i = 2; i < expr.size(); i++) {
+					newForm.add(expr.get(i));
+				}
+				return newForm;
+			}
+			if (prefix instanceof Symbol && ps.length() >= 2 && ps.endsWith(".")) { // e.g. (Date.)
+				// (new Date)
+				String head = ps.substring(0, ps.length() - 1);
+				ArrayList<Object> newForm = new ArrayList<Object>();
+				newForm.add(sym_new);
+				newForm.add(new Symbol(head));								
+				for (int i = 1; i < expr.size(); i++) {
 					newForm.add(expr.get(i));
 				}
 				return newForm;
