@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.2";
+	public static final String VERSION = "0.13.3";
 
 	// no instance
 	private Core() {
@@ -758,8 +758,8 @@ public final class Core {
 					try {
 						for (; i < len; i++) {
 							Object e = expr.get(i);
-							if (e instanceof List) {
-								Object prefix = ((List<?>) e).get(0);
+							if (e instanceof ArrayList) {
+								Object prefix = ((ArrayList<?>) e).get(0);
 								if (prefix.equals(sym_catch) || prefix.equals(sym_finally)) break;
 							}
 							ret = eval(e, env);
@@ -767,8 +767,8 @@ public final class Core {
 					} catch (Throwable t) {
 						for (; i < len; i++) {
 							Object e = expr.get(i);
-							if (e instanceof List) {
-								List<?> exprs = (List<?>) e;
+							if (e instanceof ArrayList) {
+								ArrayList<?> exprs = (ArrayList<?>) e;
 								if (exprs.get(0).equals(sym_catch) && getClass(exprs.get(1).toString()).isInstance(t)) {
 									Environment env2 = new Environment(env);
 									env2.def(Symbol.toCode(exprs.get(2).toString()), t);
@@ -783,8 +783,8 @@ public final class Core {
 					} finally {
 						for (; i < len; i++) {
 							Object e = expr.get(i);
-							if (e instanceof List && ((List<?>) e).get(0).equals(sym_finally)) {
-								List<?> exprs = (List<?>) e;
+							if (e instanceof ArrayList && ((ArrayList<?>) e).get(0).equals(sym_finally)) {
+								ArrayList<?> exprs = (ArrayList<?>) e;
 								for (int j = 1; j < exprs.size(); j++) {
 									eval(exprs.get(j), env);
 								}
