@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.4";
+	public static final String VERSION = "0.13.5";
 
 	// no instance
 	private Core() {
@@ -335,12 +335,21 @@ public final class Core {
 				Object r = apply(func, args);
 				return macroexpand(r); // macroexpand again
 			} else {
+				// macroexpand elements
 				ArrayList<Object> r = new ArrayList<Object>();
 				for (Object n2 : expr) {
 					r.add(macroexpand(n2));
 				}
 				return r;
 			}
+		} else if (n instanceof Vector) {
+			// macroexpand elements
+			List<Object> expr = Core.listValue(n);
+			Vector<Object> r = new Vector<Object>();
+			for (Object n2 : expr) {
+				r.add(macroexpand(n2));
+			}
+			return r;
 		} else if (n instanceof Symbol) {
 			String ns = n.toString();
 			if (ns.contains("/")) { // e.g. Math/PI
