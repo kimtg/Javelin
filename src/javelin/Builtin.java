@@ -513,5 +513,15 @@ class Builtin {
 				throw new IllegalArgumentException();
 			}
 		}
-	}	
+	}
+	
+	// (instance? c x)
+	// Evaluates x and tests if it is an instance of the class c. Returns true or false
+	static class instance_q extends Fn {
+		@Override
+		public Object invoke(List<Object> args) throws Throwable {
+			if (args.size() != 2) throw new IllegalArgumentException();
+			return ((Class<?>) args.get(0)).isInstance(args.get(1));
+		}
+	}
 }

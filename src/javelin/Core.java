@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.3";
+	public static final String VERSION = "0.13.4";
 
 	// no instance
 	private Core() {
@@ -102,6 +102,7 @@ public final class Core {
 		set("read", new Builtin.read());
 		set("load-string", new Builtin.load_string());
 		set("nth", new Builtin.nth());
+		set("instance?", new Builtin.instance_q());
 		
 		try {
 			load_string(
