@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.5";
+	public static final String VERSION = "0.13.6";
 
 	// no instance
 	private Core() {
@@ -286,7 +286,7 @@ public final class Core {
 			Object prefix = expr.get(0);
 			String ps = prefix.toString();
 			if (prefix instanceof Symbol && ps.equals("quote")) return n;
-			if (prefix instanceof Symbol && ps.contains("/")) { // e.g. (Math/cos 0)
+			if (prefix instanceof Symbol && ps.length() >= 3 && ps.contains("/")) { // e.g. (Math/cos 0)
 				// (. Math cos 0)
 				int sepPos = ps.indexOf('/');
 				String head = ps.substring(0, sepPos);
@@ -298,7 +298,7 @@ public final class Core {
 				for (int i = 1; i < expr.size(); i++) {
 					newForm.add(expr.get(i));
 				}
-				return newForm;
+				return macroexpand(newForm);
 			}
 			if (prefix instanceof Symbol && ps.length() >= 2 && ps.startsWith(".")) { // e.g. (.length "abc")
 				// (. "abc" length)		
@@ -310,7 +310,7 @@ public final class Core {
 				for (int i = 2; i < expr.size(); i++) {
 					newForm.add(expr.get(i));
 				}
-				return newForm;
+				return macroexpand(newForm);
 			}
 			if (prefix instanceof Symbol && ps.length() >= 2 && ps.endsWith(".")) { // e.g. (Date.)
 				// (new Date)
@@ -321,7 +321,7 @@ public final class Core {
 				for (int i = 1; i < expr.size(); i++) {
 					newForm.add(expr.get(i));
 				}
-				return newForm;
+				return macroexpand(newForm);
 			}			
 			if (prefix instanceof Symbol && macros.containsKey(ps)) {
 				UserFn func = macros.get(ps);
@@ -352,7 +352,7 @@ public final class Core {
 			return r;
 		} else if (n instanceof Symbol) {
 			String ns = n.toString();
-			if (ns.contains("/")) { // e.g. Math/PI
+			if (ns.length() >= 3 && ns.contains("/")) { // e.g. Math/PI
 				// (. Math -PI)
 				int sepPos = ns.indexOf('/');
 				String head = ns.substring(0, sepPos);
@@ -361,7 +361,7 @@ public final class Core {
 				newForm.add(sym__dot);
 				newForm.add(new Symbol(head));
 				newForm.add(new Symbol("-" + tail));
-				return newForm;
+				return macroexpand(newForm);
 			}
 		}
 		// no expansion
