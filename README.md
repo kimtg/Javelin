@@ -36,6 +36,10 @@ Macros:
  defn dotimes when while
 ```
 
+## Features ##
+* Java Interoperability
+* Tail call optimization
+
 ## Examples ##
 ### Hello, World! ###
 ```
