@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.14";
+	public static final String VERSION = "0.13.6";
 
 	// no instance
 	private Core() {
@@ -369,149 +369,119 @@ public final class Core {
 	}
 
 	static Object eval(Object n, Environment env) throws Throwable {
-start_eval:
-		while (true) {
-			if (n instanceof Symbol) {
-				Object r = env.get(((Symbol) n).code);
-				return r;
-			} else if (n instanceof Vector) {
-				Vector<Object> r = new Vector<Object>();
-				for (Object x : (Vector<?>) n) {
-					r.add(eval(x, env));
-				}
-				return r;
-			} else if (n instanceof ArrayList) { // function (FUNCTION
-														// ARGUMENT ...)
-				List<Object> expr = Core.listValue(n);
-				if (expr.size() == 0)
-					return null;
-				Object e0 = expr.get(0);
-				if (e0 instanceof Symbol) {
-					final int code = ((Symbol) e0).code;
-					if (code == sym_set_e.code) { // (set! SYMBOL-OR-FIELD VALUE) ; set the SYMBOL-OR-FIELD's value
-						Object dest = expr.get(1);
-						if (dest instanceof Symbol) {
-							Object value = eval(expr.get(2), env);
-							env.set(((Symbol) dest).code, value);
-							return value;
-						} else { // field
-							// Java interoperability
-							// (set! (. CLASS-OR-OBJECT -FIELD) VALUE) ; set Java field
-							try {
-								@SuppressWarnings("unchecked")
-								List<Object> dl = (ArrayList<Object>) dest;
-								// get class
-								Class<?> cls = tryGetClass(dl.get(1).toString());
-								Object obj = null;
-								if (cls != null) {
-									// class's static method e.g. (. java.lang.Math floor 1.5)
-								} else {
-									// object's method e.g. (. "abc" length)
-									obj = eval(dl.get(1), env);
-									cls = obj.getClass();
-								}
-	
-								String fieldName = dl.get(2).toString().substring(1);
-								java.lang.reflect.Field field = cls.getField(fieldName);
-								Object value = eval(expr.get(2), env);
-								field.set(obj, value);
-								return value;
-							} catch (Exception e) {
-								e.printStackTrace();
-								return null;
-							}
-						}
-					}
-					else if (code == sym_def.code) { // (def SYMBOL VALUE ...) ; set in the global
-								// environment
-						Object ret = null;
-						int len = expr.size();
-						for (int i = 1; i < len; i += 2) {
-							Object value = eval(expr.get(i + 1), env);
-							ret = globalEnv.def(((Symbol) expr.get(i)).code, value);
-						}
-						return ret;
-					}
-					else if (code == sym_and.code) { // (and X ...) short-circuit
-						for (int i = 1; i < expr.size(); i++) {
-							if (!Core.booleanValue(eval(expr.get(i), env))) {
-								return false;
-							}
-						}
-						return true;
-					}
-					else if (code == sym_or.code) { // (or X ...) short-circuit
-						for (int i = 1; i < expr.size(); i++) {
-							if (Core.booleanValue(eval(expr.get(i), env))) {
-								return true;
-							}
-						}
-						return false;
-					}
-					else if (code == sym_if.code) { // (if CONDITION THEN_EXPR [ELSE_EXPR])
-						Object cond = expr.get(1);
-						if (Core.booleanValue(eval(cond, env))) {
-							// tail call optimization of return eval(expr.get(2), env);
-							n = expr.get(2);
-							continue start_eval;
-						} else {
-							if (expr.size() <= 3)
-								return null;
-							// tail call optimization of return eval(expr.get(3), env);
-							n = expr.get(3);
-							continue start_eval;
-						}
-					}
-					else if (code == sym_quote.code) { // (quote X)
-						return expr.get(1);
-					}
-					else if (code == sym_fn.code) {
-						// anonymous function. lexical scoping
-						// (fn (ARGUMENT ...) BODY ...)
-						ArrayList<Object> r = new ArrayList<Object>();
-						for (int i = 1; i < expr.size(); i++) {
-							r.add(expr.get(i));
-						}
-						return new UserFn(r, env);
-					}
-					else if (code == sym_do.code) { // (do X ...)
-						int last = expr.size() - 1;
-						if (last <= 0)
-							return null;
-						for (int i = 1; i < last; i++) {
-							eval(expr.get(i), env);
-						}
-						// tail call optimization of return eval(expr.get(last), env);
-						n = expr.get(last);
-						continue start_eval;
-					}
-					else if (code == sym__dot.code) {
-						String methodName = expr.get(2).toString();
-						if (methodName.startsWith("-")) {
-							// Java interoperability
-							// (. CLASS-OR-OBJECT -FIELD) ; get Java field
-							try {
-								// get class
-								Class<?> cls = tryGetClass(expr.get(1).toString());
-								Object obj = null;
-								if (cls != null) {
-									// class's static method e.g. (. java.lang.Math floor 1.5)
-								} else {
-									// object's method e.g. (. "abc" length)
-									obj = eval(expr.get(1), env);
-									cls = obj.getClass();
-								}
-	
-								String fieldName = methodName.substring(1);
-								java.lang.reflect.Field field = cls.getField(fieldName);
-								return field.get(obj);
-							} catch (Exception e) {
-								e.printStackTrace();
-								return null;
-							}
-						}
+		if (n instanceof Symbol) {
+			Object r = env.get(((Symbol) n).code);
+			return r;
+		} else if (n instanceof Vector) {
+			Vector<Object> r = new Vector<Object>();
+			for (Object x : (Vector<?>) n) {
+				r.add(eval(x, env));
+			}
+			return r;
+		} else if (n instanceof ArrayList) { // function (FUNCTION
+													// ARGUMENT ...)
+			List<Object> expr = Core.listValue(n);
+			if (expr.size() == 0)
+				return null;
+			Object e0 = expr.get(0);
+			if (e0 instanceof Symbol) {
+				final int code = ((Symbol) e0).code;
+				if (code == sym_set_e.code) { // (set! SYMBOL-OR-FIELD VALUE) ; set the SYMBOL-OR-FIELD's value
+					Object dest = expr.get(1);
+					if (dest instanceof Symbol) {
+						Object value = eval(expr.get(2), env);
+						env.set(((Symbol) dest).code, value);
+						return value;
+					} else { // field
 						// Java interoperability
-						// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
+						// (set! (. CLASS-OR-OBJECT -FIELD) VALUE) ; set Java field
+						try {
+							@SuppressWarnings("unchecked")
+							List<Object> dl = (ArrayList<Object>) dest;
+							// get class
+							Class<?> cls = tryGetClass(dl.get(1).toString());
+							Object obj = null;
+							if (cls != null) {
+								// class's static method e.g. (. java.lang.Math floor 1.5)
+							} else {
+								// object's method e.g. (. "abc" length)
+								obj = eval(dl.get(1), env);
+								cls = obj.getClass();
+							}
+
+							String fieldName = dl.get(2).toString().substring(1);
+							java.lang.reflect.Field field = cls.getField(fieldName);
+							Object value = eval(expr.get(2), env);
+							field.set(obj, value);
+							return value;
+						} catch (Exception e) {
+							e.printStackTrace();
+							return null;
+						}
+					}
+				}
+				else if (code == sym_def.code) { // (def SYMBOL VALUE ...) ; set in the global
+							// environment
+					Object ret = null;
+					int len = expr.size();
+					for (int i = 1; i < len; i += 2) {
+						Object value = eval(expr.get(i + 1), env);
+						ret = globalEnv.def(((Symbol) expr.get(i)).code, value);
+					}
+					return ret;
+				}
+				else if (code == sym_and.code) { // (and X ...) short-circuit
+					for (int i = 1; i < expr.size(); i++) {
+						if (!Core.booleanValue(eval(expr.get(i), env))) {
+							return false;
+						}
+					}
+					return true;
+				}
+				else if (code == sym_or.code) { // (or X ...) short-circuit
+					for (int i = 1; i < expr.size(); i++) {
+						if (Core.booleanValue(eval(expr.get(i), env))) {
+							return true;
+						}
+					}
+					return false;
+				}
+				else if (code == sym_if.code) { // (if CONDITION THEN_EXPR [ELSE_EXPR])
+					Object cond = expr.get(1);
+					if (Core.booleanValue(eval(cond, env))) {
+						return eval(expr.get(2), env);
+					} else {
+						if (expr.size() <= 3)
+							return null;
+						return eval(expr.get(3), env);
+					}
+				}
+				else if (code == sym_quote.code) { // (quote X)
+					return expr.get(1);
+				}
+				else if (code == sym_fn.code) {
+					// anonymous function. lexical scoping
+					// (fn (ARGUMENT ...) BODY ...)
+					ArrayList<Object> r = new ArrayList<Object>();
+					for (int i = 1; i < expr.size(); i++) {
+						r.add(expr.get(i));
+					}
+					return new UserFn(r, env);
+				}
+				else if (code == sym_do.code) { // (do X ...)
+					int last = expr.size() - 1;
+					if (last <= 0)
+						return null;
+					for (int i = 1; i < last; i++) {
+						eval(expr.get(i), env);
+					}
+					return eval(expr.get(last), env);
+				}
+				else if (code == sym__dot.code) {
+					String methodName = expr.get(2).toString();
+					if (methodName.startsWith("-")) {
+						// Java interoperability
+						// (. CLASS-OR-OBJECT -FIELD) ; get Java field
 						try {
 							// get class
 							Class<?> cls = tryGetClass(expr.get(1).toString());
@@ -523,352 +493,333 @@ start_eval:
 								obj = eval(expr.get(1), env);
 								cls = obj.getClass();
 							}
-	
-							Class<?>[] parameterTypes = new Class<?>[expr.size() - 3];
-							ArrayList<Object> parameters = new ArrayList<Object>();
-							int last = expr.size() - 1;
-							for (int i = 3; i <= last; i++) {
-								Object a = eval(expr.get(i), env);
-								Object param = a;
-								parameters.add(param);
-								Class<?> paramClass;
-								if (param instanceof Integer)
-									paramClass = Integer.TYPE;
-								else if (param instanceof Double)
-									paramClass = Double.TYPE;
-								else if (param instanceof Long)
-									paramClass = Long.TYPE;
-								else if (param instanceof Boolean)
-									paramClass = Boolean.TYPE;
-								else if (param instanceof Character)
-									paramClass = Character.TYPE;
-								else {
-									if (param == null) paramClass = null;
-									else paramClass = param.getClass();
-								}
-								parameterTypes[i - 3] = paramClass;
-							}
-							
-							try {
-								Method m = cls.getMethod(methodName, parameterTypes);
-								return m.invoke(obj, parameters.toArray());
-							} catch (NoSuchMethodException e) {
-								for (Method m : cls.getMethods()) {
-									// find a method with the same number of parameters
-									if (m.getName().equals(methodName) && m.getParameterTypes().length == expr.size() - 3) {
-										try {
-											return m.invoke(obj, parameters.toArray());
-										} catch (IllegalArgumentException iae) {
-											// try next method
-											continue;
-										}
-									}
-								}
-							}
-							throw new IllegalArgumentException(expr.toString());
+
+							String fieldName = methodName.substring(1);
+							java.lang.reflect.Field field = cls.getField(fieldName);
+							return field.get(obj);
 						} catch (Exception e) {
 							e.printStackTrace();
 							return null;
 						}
 					}
-					else if (code == sym_new.code) {
-						// Java interoperability
-						// (new CLASS ARG ...) ; create new Java object
+					// Java interoperability
+					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
+					try {
+						// get class
+						Class<?> cls = tryGetClass(expr.get(1).toString());
+						Object obj = null;
+						if (cls != null) {
+							// class's static method e.g. (. java.lang.Math floor 1.5)
+						} else {
+							// object's method e.g. (. "abc" length)
+							obj = eval(expr.get(1), env);
+							cls = obj.getClass();
+						}
+
+						Class<?>[] parameterTypes = new Class<?>[expr.size() - 3];
+						ArrayList<Object> parameters = new ArrayList<Object>();
+						int last = expr.size() - 1;
+						for (int i = 3; i <= last; i++) {
+							Object a = eval(expr.get(i), env);
+							Object param = a;
+							parameters.add(param);
+							Class<?> paramClass;
+							if (param instanceof Integer)
+								paramClass = Integer.TYPE;
+							else if (param instanceof Double)
+								paramClass = Double.TYPE;
+							else if (param instanceof Long)
+								paramClass = Long.TYPE;
+							else if (param instanceof Boolean)
+								paramClass = Boolean.TYPE;
+							else if (param instanceof Character)
+								paramClass = Character.TYPE;
+							else {
+								if (param == null) paramClass = null;
+								else paramClass = param.getClass();
+							}
+							parameterTypes[i - 3] = paramClass;
+						}
+						
 						try {
-							String className = expr.get(1).toString();
-							Class<?> cls = getClass(className);
-							Class<?>[] parameterTypes = new Class<?>[expr.size() - 2];
-							ArrayList<Object> parameters = new ArrayList<Object>();
-							int last = expr.size() - 1;
-							for (int i = 2; i <= last; i++) {
-								Object a = eval(expr.get(i), env);
-								Object param = a;
-								parameters.add(param);
-								Class<?> paramClass;
-								if (param instanceof Integer)
-									paramClass = Integer.TYPE;
-								else if (param instanceof Double)
-									paramClass = Double.TYPE;
-								else if (param instanceof Long)
-									paramClass = Long.TYPE;
-								else if (param instanceof Boolean)
-									paramClass = Boolean.TYPE;
-								else if (param instanceof Character)
-									paramClass = Character.TYPE;
-								else {
-									if (param == null) paramClass = null;
-									else paramClass = param.getClass();
-								}
-								parameterTypes[i - 2] = paramClass;
-							}
-	
-							try {
-								Constructor<?> c = cls.getConstructor(parameterTypes);
-								return c.newInstance(parameters.toArray());
-							} catch (NoSuchMethodException e) {
-								for (Constructor<?> c : cls.getConstructors()) {
-									// find a constructor with the same number of parameters
-									if (c.getParameterTypes().length == expr.size() - 2) {
-										try {
-											return c.newInstance(parameters.toArray());
-										} catch (IllegalArgumentException iae) {
-											// try next constructor
-											continue;
-										}
-									}
-								}
-							}
-							throw new IllegalArgumentException(expr.toString());
-						} catch (Exception e) {
-							e.printStackTrace();
-							return null;
-						}
-					}
-					else if (code == sym_doseq.code) // (doseq (VAR SEQ) EXPR ...)
-					{
-						Environment env2 = new Environment(env);
-						int varCode = Core.symbolValue(Core.listValue(expr.get(1)).get(0)).code;
-						@SuppressWarnings("rawtypes")
-						Iterable seq = (Iterable) eval(Core.listValue(expr.get(1)).get(1), env);
-						int len = expr.size();
-						for (Object x : seq) {
-							env2.def(varCode, (Object) x);
-							for (int i = 2; i < len; i++) {
-								eval(expr.get(i), env2);
-							}
-						}
-						return null;
-					}
-					else if (code == sym_let.code) // (let (VAR VALUE ...) BODY ...)
-					{
-						Environment env2 = new Environment(env);
-						List<Object> bindings = Core.listValue(expr.get(1));
-						for (int i = 0; i < bindings.size(); i+= 2) {
-							env2.def(Core.symbolValue(bindings.get(i)).code, eval(bindings.get(i + 1), env2));
-						}
-						Object ret = null;
-						for (int i = 2; i < expr.size(); i++) {
-							ret = eval(expr.get(i), env2);
-						}
-						return ret;
-					}
-					else if (code == sym_import.code) // (import & import-symbols-or-lists-or-prefixes)
-					{
-						Class<?> lastImport = null;
-						for (int i = 1; i < expr.size(); i++) {
-							Object x = expr.get(i);
-							if (x instanceof Symbol) { // e.g. java.util.Date
-								String s = x.toString();
-								try {								
-									lastImport = getClass(s);
-									getClassCache.put(lastImport.getSimpleName(), lastImport);
-								} catch (ClassNotFoundException cnfe) {
-									if (!imports.contains(s)) imports.add(s);
-								}
-							} else if (x instanceof List) { // e.g. (java.util Date ArrayList)
-								List<Object> xl = listValue(x);
-								String prefix = xl.get(0).toString();
-								for (int j = 1; j < xl.size(); j++) {
-									String s = xl.get(j).toString();
-									lastImport = getClass(prefix + "." + s);
-									getClassCache.put(s, lastImport);
-								}
-							} else {
-								throw new RuntimeException("Syntax error");
-							}
-						}
-						return lastImport;
-					}
-					else if (code == sym_reify.code) // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
-					{
-	// Note that the first parameter must be supplied to
-	// correspond to the target object ('this' in Java parlance). Thus
-	// methods for interfaces will take one more argument than do the
-	// interface declarations.
-	//
-	// Example:
-	//					(import javax.swing java.awt java.awt.event)
-	//
-	//					(def frame (new JFrame))
-	//					(def button (new Button "Hello"))
-	//					(. button addActionListener
-	//						(reify java.awt.event.ActionListener
-	//						  (actionPerformed (this e)
-	//							(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
-	//					(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
-	//					(. frame add button (.get BorderLayout NORTH))
-	//					(. frame pack)
-	//					(. frame setVisible true)
-	
-						Class<?> cls = getClass(expr.get(1).toString());
-						ClassLoader cl = cls.getClassLoader();
-						HashMap<String, UserFn> methods = new HashMap<String, UserFn>();
-						for (int i = 2; i < expr.size(); i++) {
-							@SuppressWarnings("unchecked")
-							ArrayList<Object> methodDef = (ArrayList<Object>) expr.get(i);
-							methods.put(methodDef.get(0).toString(), new UserFn(new ArrayList<Object>(methodDef.subList(1, methodDef.size())), env));
-						}
-						class MyHandler implements InvocationHandler {
-							HashMap<String, UserFn> methods;
-	
-							public MyHandler(HashMap<String, UserFn> methods, Environment env) {
-								this.methods = methods;
-							}
-	
-							@Override
-							public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-								ArrayList<Object> args2 = new ArrayList<Object>();
-								args2.add(this);
-								if (args != null) args2.addAll(Arrays.asList(args));
-								return apply(methods.get(method.getName()), args2);
-							}
-						}
-						InvocationHandler handler = new MyHandler(methods, env);
-						Object ret = Proxy.newProxyInstance(cl, new Class[] {cls}, handler);
-						return ret;
-					}
-					else if (code == sym_recur.code) // (recur ARG ...)
-					{
-						ArrayList<Object> args = new ArrayList<Object>();
-						for (int i = 1; i < expr.size(); i++) {
-							args.add(eval(expr.get(i), env));
-						}
-						throw new Recur(args);
-					}
-					else if (code == sym_loop.code) // (loop (VAR VALUE ...) BODY ...)
-					{
-						// separate formal and actual parameters
-						List<Object> bindings = Core.listValue(expr.get(1));
-						ArrayList<Object> formalParams = new ArrayList<Object>();
-						ArrayList<Object> actualParams = new ArrayList<Object>();
-						Environment env2 = new Environment(env);
-						for (int i = 0; i < bindings.size(); i+= 2) {
-							formalParams.add(bindings.get(i));
-							actualParams.add(eval(bindings.get(i + 1), env2));
-						}
-	
-						loopStart: while (true) {
-							// fill the environment
-							for (int i = 0; i < formalParams.size(); i++) {
-								env2.def(Core.symbolValue(formalParams.get(i)).code, actualParams.get(i));
-							}
-							// evaluate body
-							Object ret = null;
-							for (int i = 2; i < expr.size(); i++) {
-								try {
-									ret = eval(expr.get(i), env2);
-								} catch (Recur e) {
-									actualParams = e.args;
-									continue loopStart; // recur this loop (effectively goto)
-								}
-							}
-							return ret;
-						}
-					}
-					else if (code == sym_quasiquote.code) // (quasiquote S-EXPRESSION)
-					{
-						return quasiquote(expr.get(1), env);
-					}
-					else if (code == sym_try.code) // (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
-					{
-						int i = 1, len = expr.size();
-						Object ret = null;
-						try {
-							for (; i < len; i++) {
-								Object e = expr.get(i);
-								if (e instanceof ArrayList) {
-									Object prefix = ((ArrayList<?>) e).get(0);
-									if (prefix.equals(sym_catch) || prefix.equals(sym_finally)) break;
-								}
-								ret = eval(e, env);
-							}
-						} catch (Throwable t) {
-							for (; i < len; i++) {
-								Object e = expr.get(i);
-								if (e instanceof ArrayList) {
-									ArrayList<?> exprs = (ArrayList<?>) e;
-									if (exprs.get(0).equals(sym_catch) && getClass(exprs.get(1).toString()).isInstance(t)) {
-										Environment env2 = new Environment(env);
-										env2.def(Symbol.toCode(exprs.get(2).toString()), t);
-										for (int j = 3; j < exprs.size(); j++) {
-											ret = eval(exprs.get(j), env2);
-										}
-										return ret;
-									}
-								}
-							}
-							throw t;
-						} finally {
-							for (; i < len; i++) {
-								Object e = expr.get(i);
-								if (e instanceof ArrayList && ((ArrayList<?>) e).get(0).equals(sym_finally)) {
-									ArrayList<?> exprs = (ArrayList<?>) e;
-									for (int j = 1; j < exprs.size(); j++) {
-										eval(exprs.get(j), env);
+							Method m = cls.getMethod(methodName, parameterTypes);
+							return m.invoke(obj, parameters.toArray());
+						} catch (NoSuchMethodException e) {
+							for (Method m : cls.getMethods()) {
+								// find a method with the same number of parameters
+								if (m.getName().equals(methodName) && m.getParameterTypes().length == expr.size() - 3) {
+									try {
+										return m.invoke(obj, parameters.toArray());
+									} catch (IllegalArgumentException iae) {
+										// try next method
+										continue;
 									}
 								}
 							}
 						}
-						return ret;
-					}
-					else if (code == sym_defmacro.code) // (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
-					{
-						macros.put(expr.get(1).toString(), new UserFn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
+						throw new IllegalArgumentException(expr.toString());
+					} catch (Exception e) {
+						e.printStackTrace();
 						return null;
 					}
 				}
-				// evaluate arguments
-				Object func = eval(expr.get(0), env);
-				ArrayList<Object> args = new ArrayList<Object>();
-				int len = expr.size();
-				for (int i = 1; i < len; i++) {
-					args.add(eval(expr.get(i), env));
+				else if (code == sym_new.code) {
+					// Java interoperability
+					// (new CLASS ARG ...) ; create new Java object
+					try {
+						String className = expr.get(1).toString();
+						Class<?> cls = getClass(className);
+						Class<?>[] parameterTypes = new Class<?>[expr.size() - 2];
+						ArrayList<Object> parameters = new ArrayList<Object>();
+						int last = expr.size() - 1;
+						for (int i = 2; i <= last; i++) {
+							Object a = eval(expr.get(i), env);
+							Object param = a;
+							parameters.add(param);
+							Class<?> paramClass;
+							if (param instanceof Integer)
+								paramClass = Integer.TYPE;
+							else if (param instanceof Double)
+								paramClass = Double.TYPE;
+							else if (param instanceof Long)
+								paramClass = Long.TYPE;
+							else if (param instanceof Boolean)
+								paramClass = Boolean.TYPE;
+							else if (param instanceof Character)
+								paramClass = Character.TYPE;
+							else {
+								if (param == null) paramClass = null;
+								else paramClass = param.getClass();
+							}
+							parameterTypes[i - 2] = paramClass;
+						}
+
+						try {
+							Constructor<?> c = cls.getConstructor(parameterTypes);
+							return c.newInstance(parameters.toArray());
+						} catch (NoSuchMethodException e) {
+							for (Constructor<?> c : cls.getConstructors()) {
+								// find a constructor with the same number of parameters
+								if (c.getParameterTypes().length == expr.size() - 2) {
+									try {
+										return c.newInstance(parameters.toArray());
+									} catch (IllegalArgumentException iae) {
+										// try next constructor
+										continue;
+									}
+								}
+							}
+						}
+						throw new IllegalArgumentException(expr.toString());
+					} catch (Exception e) {
+						e.printStackTrace();
+						return null;
+					}
 				}
-				if (func instanceof UserFn) {
-					UserFn f = (UserFn) func;
-					fnStart: while (true) {
-						Environment local_env = new Environment(f.outer_env);
+				else if (code == sym_doseq.code) // (doseq (VAR SEQ) EXPR ...)
+				{
+					Environment env2 = new Environment(env);
+					int varCode = Core.symbolValue(Core.listValue(expr.get(1)).get(0)).code;
+					@SuppressWarnings("rawtypes")
+					Iterable seq = (Iterable) eval(Core.listValue(expr.get(1)).get(1), env);
+					int len = expr.size();
+					for (Object x : seq) {
+						env2.def(varCode, (Object) x);
+						for (int i = 2; i < len; i++) {
+							eval(expr.get(i), env2);
+						}
+					}
+					return null;
+				}
+				else if (code == sym_let.code) // (let (VAR VALUE ...) BODY ...)
+				{
+					Environment env2 = new Environment(env);
+					List<Object> bindings = Core.listValue(expr.get(1));
+					for (int i = 0; i < bindings.size(); i+= 2) {
+						env2.def(Core.symbolValue(bindings.get(i)).code, eval(bindings.get(i + 1), env2));
+					}
+					Object ret = null;
+					for (int i = 2; i < expr.size(); i++) {
+						ret = eval(expr.get(i), env2);
+					}
+					return ret;
+				}
+				else if (code == sym_import.code) // (import & import-symbols-or-lists-or-prefixes)
+				{
+					Class<?> lastImport = null;
+					for (int i = 1; i < expr.size(); i++) {
+						Object x = expr.get(i);
+						if (x instanceof Symbol) { // e.g. java.util.Date
+							String s = x.toString();
+							try {								
+								lastImport = getClass(s);
+								getClassCache.put(lastImport.getSimpleName(), lastImport);
+							} catch (ClassNotFoundException cnfe) {
+								if (!imports.contains(s)) imports.add(s);
+							}
+						} else if (x instanceof List) { // e.g. (java.util Date ArrayList)
+							List<Object> xl = listValue(x);
+							String prefix = xl.get(0).toString();
+							for (int j = 1; j < xl.size(); j++) {
+								String s = xl.get(j).toString();
+								lastImport = getClass(prefix + "." + s);
+								getClassCache.put(s, lastImport);
+							}
+						} else {
+							throw new RuntimeException("Syntax error");
+						}
+					}
+					return lastImport;
+				}
+				else if (code == sym_reify.code) // (reify INTERFACE (METHOD (ARGS ...) BODY ...) ...)
+				{
+// Note that the first parameter must be supplied to
+// correspond to the target object ('this' in Java parlance). Thus
+// methods for interfaces will take one more argument than do the
+// interface declarations.
+//
+// Example:
+//					(import javax.swing java.awt java.awt.event)
+//
+//					(def frame (new JFrame))
+//					(def button (new Button "Hello"))
+//					(. button addActionListener
+//						(reify java.awt.event.ActionListener
+//						  (actionPerformed (this e)
+//							(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
+//					(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
+//					(. frame add button (.get BorderLayout NORTH))
+//					(. frame pack)
+//					(. frame setVisible true)
+
+					Class<?> cls = getClass(expr.get(1).toString());
+					ClassLoader cl = cls.getClassLoader();
+					HashMap<String, UserFn> methods = new HashMap<String, UserFn>();
+					for (int i = 2; i < expr.size(); i++) {
 						@SuppressWarnings("unchecked")
-						List<Object> arg_syms = (List<Object>) f.def.get(0);
+						ArrayList<Object> methodDef = (ArrayList<Object>) expr.get(i);
+						methods.put(methodDef.get(0).toString(), new UserFn(new ArrayList<Object>(methodDef.subList(1, methodDef.size())), env));
+					}
+					class MyHandler implements InvocationHandler {
+						HashMap<String, UserFn> methods;
 
-						int len1 = arg_syms.size();
-						for (int i = 0; i < len1; i++) { // assign arguments
-							Symbol sym = (Symbol) arg_syms.get(i);
-							if (sym.toString().equals("&")) { // variadic arguments
-								sym = Core.symbolValue(arg_syms.get(i + 1));
-								local_env.def(sym.code, new ArrayList<Object>(args.subList(i, args.size())));
-								break;
-							}
-							Object n2 = args.get(i);
-							local_env.def(sym.code, n2);
+						public MyHandler(HashMap<String, UserFn> methods, Environment env) {
+							this.methods = methods;
 						}
 
-						len1 = f.def.size();
+						@Override
+						public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+							ArrayList<Object> args2 = new ArrayList<Object>();
+							args2.add(this);
+							if (args != null) args2.addAll(Arrays.asList(args));
+							return apply(methods.get(method.getName()), args2);
+						}
+					}
+					InvocationHandler handler = new MyHandler(methods, env);
+					Object ret = Proxy.newProxyInstance(cl, new Class[] {cls}, handler);
+					return ret;
+				}
+				else if (code == sym_recur.code) // (recur ARG ...)
+				{
+					ArrayList<Object> args = new ArrayList<Object>();
+					for (int i = 1; i < expr.size(); i++) {
+						args.add(eval(expr.get(i), env));
+					}
+					throw new Recur(args);
+				}
+				else if (code == sym_loop.code) // (loop (VAR VALUE ...) BODY ...)
+				{
+					// separate formal and actual parameters
+					List<Object> bindings = Core.listValue(expr.get(1));
+					ArrayList<Object> formalParams = new ArrayList<Object>();
+					ArrayList<Object> actualParams = new ArrayList<Object>();
+					Environment env2 = new Environment(env);
+					for (int i = 0; i < bindings.size(); i+= 2) {
+						formalParams.add(bindings.get(i));
+						actualParams.add(eval(bindings.get(i + 1), env2));
+					}
+
+					loopStart: while (true) {
+						// fill the environment
+						for (int i = 0; i < formalParams.size(); i++) {
+							env2.def(Core.symbolValue(formalParams.get(i)).code, actualParams.get(i));
+						}
+						// evaluate body
 						Object ret = null;
-						for (int i = 1; i < len1; i++) { // body
-							// tail call optimization
-							if (i == len1 - 1) {
-								n = f.def.get(i);
-								env = local_env;
-								continue start_eval;
-							}
+						for (int i = 2; i < expr.size(); i++) {
 							try {
-								ret = Core.eval(f.def.get(i), local_env);
+								ret = eval(expr.get(i), env2);
 							} catch (Recur e) {
-								args = e.args;
-								continue fnStart; // recur this function (effectively goto)
+								actualParams = e.args;
+								continue loopStart; // recur this loop (effectively goto)
 							}
 						}
 						return ret;
 					}
-				} else {
-					return apply(func, args);	
-				}				
-			} else {
-				// return n.clone();
-				return n;
+				}
+				else if (code == sym_quasiquote.code) // (quasiquote S-EXPRESSION)
+				{
+					return quasiquote(expr.get(1), env);
+				}
+				else if (code == sym_try.code) // (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
+				{
+					int i = 1, len = expr.size();
+					Object ret = null;
+					try {
+						for (; i < len; i++) {
+							Object e = expr.get(i);
+							if (e instanceof ArrayList) {
+								Object prefix = ((ArrayList<?>) e).get(0);
+								if (prefix.equals(sym_catch) || prefix.equals(sym_finally)) break;
+							}
+							ret = eval(e, env);
+						}
+					} catch (Throwable t) {
+						for (; i < len; i++) {
+							Object e = expr.get(i);
+							if (e instanceof ArrayList) {
+								ArrayList<?> exprs = (ArrayList<?>) e;
+								if (exprs.get(0).equals(sym_catch) && getClass(exprs.get(1).toString()).isInstance(t)) {
+									Environment env2 = new Environment(env);
+									env2.def(Symbol.toCode(exprs.get(2).toString()), t);
+									for (int j = 3; j < exprs.size(); j++) {
+										ret = eval(exprs.get(j), env2);
+									}
+									return ret;
+								}
+							}
+						}
+						throw t;
+					} finally {
+						for (; i < len; i++) {
+							Object e = expr.get(i);
+							if (e instanceof ArrayList && ((ArrayList<?>) e).get(0).equals(sym_finally)) {
+								ArrayList<?> exprs = (ArrayList<?>) e;
+								for (int j = 1; j < exprs.size(); j++) {
+									eval(exprs.get(j), env);
+								}
+							}
+						}
+					}
+					return ret;
+				}
+				else if (code == sym_defmacro.code) // (defmacro add (a & more) `(+ ~a ~@more)) ; define macro
+				{
+					macros.put(expr.get(1).toString(), new UserFn(new ArrayList<Object>(expr.subList(2, expr.size())), globalEnv));
+					return null;
+				}
 			}
-			// unreachable
+			// evaluate arguments
+			Object func = eval(expr.get(0), env);
+			ArrayList<Object> args = new ArrayList<Object>();
+			int len = expr.size();
+			for (int i = 1; i < len; i++) {
+				args.add(eval(expr.get(i), env));
+			}
+			return apply(func, args);
+		} else {
+			// return n.clone();
+			return n;
 		}
 	}
 
