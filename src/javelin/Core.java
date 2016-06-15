@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.6";
+	public static final String VERSION = "0.13.7";
 
 	// no instance
 	private Core() {
@@ -54,6 +54,8 @@ public final class Core {
 	static final Symbol sym_recur = new Symbol("recur");
 	static final Symbol sym_loop = new Symbol("loop");
 	static final Symbol sym_quasiquote = new Symbol("quasiquote");
+	static final Symbol sym_unquote = new Symbol("unquote");
+	static final Symbol sym_unquote_splicing = new Symbol("unquote-splicing");
 	static final Symbol sym_try = new Symbol("try");
 	static final Symbol sym_catch = new Symbol("catch");
 	static final Symbol sym_finally = new Symbol("finally");
@@ -828,7 +830,7 @@ public final class Core {
 			@SuppressWarnings("unchecked")
 			ArrayList<Object> arg2 = (ArrayList<Object>) arg;
 			Object head = arg2.get(0);
-			if (head instanceof Symbol && ((Symbol) head).toString().equals("unquote")) {
+			if (head instanceof Symbol && ((Symbol) head).code == sym_unquote.code) {
 				return macroexpandEval(arg2.get(1), env);
 			}
 			ArrayList<Object> ret = new ArrayList<>();
@@ -839,10 +841,8 @@ public final class Core {
 					if (a2.size() > 0) {
 						Object head2 = a2.get(0);
 						if (head2 instanceof Symbol) {
-							String s = head2.toString();
-							if (s.equals("unquote")) {
-								ret.add(macroexpandEval(a2.get(1), env));
-							} else if (s.equals("unquote-splicing")) {
+							Symbol s = (Symbol) head2;
+							if (s.code == sym_unquote_splicing.code) {
 								ret.addAll(Core.listValue(macroexpandEval(a2.get(1), env)));
 							} else {
 								ret.add(quasiquote(a, env));
@@ -1136,22 +1136,22 @@ public final class Core {
 			return Pattern.compile(tok.substring(2));
 		} else if (tok.equals("'")) { // quote
 			ArrayList<Object> ret = new ArrayList<Object>();
-			ret.add(new Symbol("quote"));
+			ret.add(sym_quote);
 			ret.add(parse(r));
 			return ret;
 		} else if (tok.equals("`")) { // quasiquote
 			ArrayList<Object> ret = new ArrayList<Object>();
-			ret.add(new Symbol("quasiquote"));
+			ret.add(sym_quasiquote);
 			ret.add(parse(r));
 			return ret;
 		} else if (tok.equals("~")) { // unquote
 			ArrayList<Object> ret = new ArrayList<Object>();
-			ret.add(new Symbol("unquote"));
+			ret.add(sym_unquote);
 			ret.add(parse(r));
 			return ret;
 		} else if (tok.equals("~@")) { // unquote-splicing
 			ArrayList<Object> ret = new ArrayList<Object>();
-			ret.add(new Symbol("unquote-splicing"));
+			ret.add(sym_unquote_splicing);
 			ret.add(parse(r));
 			return ret;
 		} else if (tok.equals("(")) { // list
