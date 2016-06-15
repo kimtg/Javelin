@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.13.7";
+	public static final String VERSION = "0.13.8";
 
 	// no instance
 	private Core() {
@@ -827,8 +827,7 @@ public final class Core {
 
 	private static Object quasiquote(Object arg, Environment env) throws Throwable {
 		if (arg instanceof ArrayList && ((ArrayList<?>) arg).size() > 0) {
-			@SuppressWarnings("unchecked")
-			ArrayList<Object> arg2 = (ArrayList<Object>) arg;
+			ArrayList<?> arg2 = (ArrayList<?>) arg;
 			Object head = arg2.get(0);
 			if (head instanceof Symbol && ((Symbol) head).code == sym_unquote.code) {
 				return macroexpandEval(arg2.get(1), env);
@@ -836,26 +835,16 @@ public final class Core {
 			ArrayList<Object> ret = new ArrayList<>();
 			for (Object a : arg2) {
 				if (a instanceof ArrayList) {
-					@SuppressWarnings("unchecked")
-					ArrayList<Object> a2 = (ArrayList<Object>) a;
+					ArrayList<?> a2 = (ArrayList<?>) a;
 					if (a2.size() > 0) {
 						Object head2 = a2.get(0);
-						if (head2 instanceof Symbol) {
-							Symbol s = (Symbol) head2;
-							if (s.code == sym_unquote_splicing.code) {
-								ret.addAll(Core.listValue(macroexpandEval(a2.get(1), env)));
-							} else {
-								ret.add(quasiquote(a, env));
-							}
-						} else {
-							ret.add(quasiquote(a, env));
+						if (head2 instanceof Symbol && ((Symbol) head2).code == sym_unquote_splicing.code) {
+							ret.addAll(Core.listValue(macroexpandEval(a2.get(1), env)));
+							continue;
 						}
-					} else {
-						ret.add(quasiquote(a, env));
 					}
-				} else {
-					ret.add(a);
 				}
+				ret.add(quasiquote(a, env));
 			}
 			return ret;
 		} else {
