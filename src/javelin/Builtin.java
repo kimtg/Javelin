@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -509,6 +510,8 @@ class Builtin {
 					iter.next();
 				}
 				return iter.next();
+			} else if (coll.getClass().isArray()) {
+				return Array.get(coll, Core.intValue(args.get(1)));
 			} else {
 				throw new IllegalArgumentException();
 			}
