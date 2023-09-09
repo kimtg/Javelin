@@ -375,7 +375,7 @@ public final class Core {
 			Object r = env.get(((Symbol) n).code);
 			return r;
 		} else if (n instanceof Vector) {
-			Vector<Object> r = new Vector<Object>();
+			ArrayList<Object> r = new ArrayList<Object>();
 			for (Object x : (Vector<?>) n) {
 				r.add(eval(x, env));
 			}
