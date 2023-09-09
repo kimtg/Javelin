@@ -278,21 +278,16 @@ abc
 (. frame setVisible true)
 ```
 
-#### KOSPI200 Ticker
+#### Regular expression example
 ```
-(import (java.util Date))
-
-(defn get-quote []
+(defn get-title [url]
   (try
-    (let [text (slurp "http://kosdb.koscom.co.kr/main/jisuticker.html" :encoding "euc-kr")
-          m (. #"KOSPI200.*>(.+)</font>" matcher text)]
-      (if (. m find) (. (. m group 1) replaceAll "&nbsp;" "") ""))
+    (let [text (slurp url :encoding "utf-8")
+          m (. #"(?i)<title>(.+)</title>" matcher text)]
+      (if (. m find) (. m group 1) ""))
     (catch Exception e (println e))))
 
-(loop []
-  (println (new Date) ":" (get-quote))
-  (. Thread sleep 2000)
-  (recur))
+(println (get-title "http://www.example.com"))
 ```
 
 ### Java interoperability (from Java) ###
