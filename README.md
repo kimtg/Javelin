@@ -2,6 +2,17 @@
 
 Javelin is a dialect of Lisp. It is designed to be an embedded language (minimal Lisp for the Java Virtual Machine). It uses Clojure-like syntax.
 
+## Influenced by
+[Clojure](https://clojure.org/)
+
+## Influenced
+[Closhure](https://github.com/kimtg/Closhure)
+
+## Key learnings
+1. Lisp interpreter
+2. Reflection
+3. Multi-line input
+
 ## Compile ##
 Run `compile.bat`. This script makes a runnable JAR file.
 
