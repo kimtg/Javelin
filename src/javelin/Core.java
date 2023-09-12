@@ -681,18 +681,18 @@ public final class Core {
 // interface declarations.
 //
 // Example:
-//					(import javax.swing java.awt java.awt.event)
-//
-//					(def frame (new JFrame))
-//					(def button (new Button "Hello"))
-//					(. button addActionListener
-//						(reify java.awt.event.ActionListener
-//						  (actionPerformed (this e)
-//							(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
-//					(. frame setDefaultCloseOperation (.get JFrame EXIT_ON_CLOSE))
-//					(. frame add button (.get BorderLayout NORTH))
-//					(. frame pack)
-//					(. frame setVisible true)
+//   (import javax.swing java.awt java.awt.event)
+//   
+//   (def frame (new JFrame))
+//   (def button (new Button "Hello"))
+//   (. button addActionListener
+//   	(reify java.awt.event.ActionListener
+//   	  (actionPerformed (this e)
+//   		(. javax.swing.JOptionPane showMessageDialog nil (str "Hello, World!\nthis=" this "\ne=" e)))))
+//   (. frame setDefaultCloseOperation (. JFrame -EXIT_ON_CLOSE))
+//   (. frame add button (. BorderLayout -NORTH))
+//   (. frame pack)
+//   (. frame setVisible true)
 
 					Class<?> cls = getClass(expr.get(1).toString());
 					ClassLoader cl = cls.getClassLoader();
