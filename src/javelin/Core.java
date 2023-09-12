@@ -451,7 +451,7 @@ public final class Core {
 				else if (code == sym_if.code) { // (if CONDITION THEN_EXPR [ELSE_EXPR])
 					Object cond = expr.get(1);
 					if (Core.booleanValue(eval(cond, env))) {
-						return eval(expr.get(2), env);
+						return eval(expr.get(2), env); // Tail call optimization is not faster. I tried it.
 					} else {
 						if (expr.size() <= 3)
 							return null;
