@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.14";
+	public static final String VERSION = "0.15";
 
 	// no instance
 	private Core() {
@@ -202,6 +202,27 @@ public final class Core {
 			sb.append(closeParen);
 			return sb.toString();
 		}
+		else if (value instanceof Character)
+		{
+			switch ((char)value)
+			{
+				case '\n':
+					return "\\newline";
+				case ' ':
+					return "\\space";
+				case '\t':
+					return "\\tab";
+				case '\f':
+					return "\\formfeed";
+				case '\b':
+					return "\\backspace";
+				case '\r':
+					return "\\return";
+				default:
+					return "\\" + value.toString();
+			}
+		}
+
 		else if (value instanceof Class<?>) return ((Class<?>) value).getName();
 		else return value.toString();
 	}
