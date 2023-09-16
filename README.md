@@ -78,8 +78,21 @@ You can use all Java's data types.
 
 Literals:
 ```
-> (map type '(3 3L 3.0 3e3 true false nil "string" #"regex" \a :a () []))
-(java.lang.Integer java.lang.Long java.lang.Double java.lang.Double java.lang.Boolean java.lang.Boolean nil java.lang.String java.util.regex.Pattern java.lang.Character javelin.Keyword java.util.ArrayList java.util.Vector)
+> (doseq (x '(3 3L 3.0 3e3 true false nil "string" #"regex" \a :a () [])) (prn x ': (type x)))
+3 : java.lang.Integer
+3 : java.lang.Long
+3.0 : java.lang.Double
+3000.0 : java.lang.Double
+true : java.lang.Boolean
+false : java.lang.Boolean
+nil : nil
+"string" : java.lang.String
+#"regex" : java.util.regex.Pattern
+\a : java.lang.Character
+:a : javelin.Keyword
+() : java.util.ArrayList
+[] : java.util.Vector
+nil
 ```
 * Characters - preceded by a backslash: \c. \newline, \space, \tab, \formfeed, \backspace, and \return yield the corresponding characters. Unicode characters are represented with \uNNNN as in Java. Octals are represented with \oNNN.
 * nil Means 'nothing/no-value'- represents Java null and tests logical false
