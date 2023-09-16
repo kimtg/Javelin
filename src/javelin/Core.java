@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.15";
+	public static final String VERSION = "0.16";
 
 	// no instance
 	private Core() {
@@ -1050,8 +1050,8 @@ public final class Core {
 
 	public static String readToken(Reader r) throws IOException {
 		final String ws = " \t\r\n,";
-		final String delim = "()[] \t\r\n,;\"";
-		final String prefix = "()[]'`\"#";
+		final String delim = "()[] \t\r\n,;\"\\";
+		final String prefix = "()[]'`\"#\\";
 
 		while (true) {			
 			char c, p;
@@ -1102,7 +1102,20 @@ public final class Core {
 						}
 					}
 					return acc.toString();
-				} else {				
+				}
+				else if (p == '\\') // character
+				{
+					StringBuilder acc1 = new StringBuilder(); // accumulator
+															 // read until delim
+					while (!eof(r))
+					{
+						if (delim.indexOf(peek(r)) >= 0 && acc1.length() > 1) break;
+						c = (char) r.read();
+						acc1.append(c);
+					}
+					return acc1.toString();
+				}
+				else {				
 					c = (char) r.read();
 					return "" + c;
 				}
