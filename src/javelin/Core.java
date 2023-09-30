@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.16";
+	public static final String VERSION = "0.17";
 
 	// no instance
 	private Core() {
@@ -784,6 +784,9 @@ public final class Core {
 				{
 					return quasiquote(expr.get(1), env);
 				}
+				else if (code == sym_unquote.code) { // (unquote X) -> (unquote X) ; to process nested quasiquotes
+					return expr;
+				}                    
 				else if (code == sym_try.code) // (try EXPR ... (catch CLASS VAR EXPR ...) ... (finally EXPR ...))
 				{
 					int i = 1, len = expr.size();
