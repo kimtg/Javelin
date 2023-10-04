@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class Core {
-	public static final String VERSION = "0.18";
+	public static final String VERSION = "0.19";
 
 	// no instance
 	private Core() {
@@ -508,7 +508,7 @@ public final class Core {
 						// (. CLASS-OR-OBJECT -FIELD) ; get Java field
 						try {
 							// get class
-							Class<?> cls = tryGetClass(expr.get(1).toString());
+							Class<?> cls = expr.get(1) instanceof Symbol ? tryGetClass(expr.get(1).toString()) : null;
 							Object obj = null;
 							if (cls != null) {
 								// class's static method e.g. (. java.lang.Math floor 1.5)
@@ -530,7 +530,7 @@ public final class Core {
 					// (. CLASS-OR-OBJECT METHOD ARGUMENT ...) ; Java method invocation
 					try {
 						// get class
-						Class<?> cls = tryGetClass(expr.get(1).toString());
+						Class<?> cls = expr.get(1) instanceof Symbol ? tryGetClass(expr.get(1).toString()) : null;
 						Object obj = null;
 						if (cls != null) {
 							// class's static method e.g. (. java.lang.Math floor 1.5)
